@@ -5,35 +5,17 @@
 <!-- =====================================================================
   RISHIKESH ENTERPRISES — Supabase-connected customer website
   ---------------------------------------------------------------------
-  FIX IN THIS VERSION (category images not showing):
-   • Category images now resolve in 4 safe steps:
-       1) categories.image_url from your DB (if it is a valid http/https/data URL)
-       2) exact id match with the built-in image map (lighting, switches, …)
-       3) alias + keyword match on id/name (e.g. 'led-bulbs', 'Hair Dresser',
-          'air-cooler', 'trimmers' … all find the right picture)
-       4) ⚡ placeholder (never a blank/broken box)
-   • Empty/undefined image src can no longer render a broken image.
-   • console.warn now lists every category that has NO usable image_url in the
-     DB, so you know exactly which rows to fix in Supabase.
-   • OPTIONAL permanent fix — run once in Supabase SQL editor (fills image_url):
-       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/17e50dc4b-3bbf-48aa-b9b5-a6149a1e2c69.png' WHERE id='lighting';
-       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/15a5c5d03-2491-4d2f-816f-244105678c8b.png' WHERE id='switches';
-       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/15e622e13-c85b-488d-be6c-c686440fa47c.png' WHERE id='fans';
-       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/124f1a5f5-abd6-4e01-947f-6260552f8c4b.png' WHERE id='wiring';
-       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/18503c6e3-cf7c-4542-80bd-0704b4572242.png' WHERE id='motors';
-       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1273b234a-13d6-4b50-9051-ce6887aff7b6.png' WHERE id='appliances';
-       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/12792c58f-ab09-449e-a562-603aa1e545f8.png' WHERE id='safety';
-       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/130a2abf0-d1dc-4603-9a58-6f2e3e29d2e6.png' WHERE id='extension';
-       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1aec7f55e-6651-4e76-a072-b4963a4b9a4f.png' WHERE id='ro';
-       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1559a2d96-7024-48b1-a40b-66b8eaa38a90.png' WHERE id='battery';
-       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/15d975cb6-d90c-4cfb-9630-40001850e212.png' WHERE id='induction';
-       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/198dba628-8113-4bec-b6db-20cfe2909507.png' WHERE id='haircare';
-       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/14552a96f-8a57-4b4f-90af-ce0bdc606262.png' WHERE id='cooler';
-       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1b57076ac-49f7-4ca0-a7d5-61b0cc4d61cd.png' WHERE id='grooming';
-     (If your ids are different, the website still auto-picks the right picture
-      by keyword — the UPDATE is only to make the DB the single source of truth.)
-  EVERYTHING ELSE (design, cart, WhatsApp checkout, search, store info,
-  privacy page, Supabase loading flow) is unchanged.
+  FIXES IN THIS VERSION (mobile alignment, from your screenshot):
+   • Header row no longer overlaps on small phones: the logo text now
+     shrinks with an ellipsis (…) and the Cart + Call buttons are pinned
+     to the right edge and never sit on top of the logo.
+   • Removed a CSS rule that pulled the cart/call buttons left on mobile.
+   • Tighter header gaps on mobile so everything fits in one clean row.
+   • BONUS FIX for "0 items" on category cards: category matching is now
+     case-insensitive (DB 'Lighting' vs 'lighting' both work), so counts
+     and category product lists work even if the DB casing differs.
+  EVERYTHING ELSE (Supabase loading, cart, WhatsApp checkout, search,
+  store info, privacy page, design) is unchanged.
 ===================================================================== -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#7c0d10">
@@ -64,26 +46,25 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid rgba(
 .util-right a{color:#fff;font-weight:800}
 @media(max-width:520px){.util-hours{display:none}}
 
-/* ---------- Header ---------- */
+/* ---------- Header (FIXED mobile alignment) ---------- */
 .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-.topbar-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:10px 20px}
-.logo{display:flex;align-items:center;gap:11px;color:var(--brand);flex-shrink:0}
-.logo svg{width:46px;height:46px;transition:transform .25s ease}
+.topbar-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:10px 20px;flex-wrap:nowrap}
+.logo{display:flex;align-items:center;gap:10px;color:var(--brand);min-width:0;flex:0 1 auto}
+.logo svg{width:46px;height:46px;flex-shrink:0;transition:transform .25s ease}
 .logo:hover svg{transform:rotate(-10deg) scale(1.05)}
-.logo-text{display:flex;flex-direction:column;line-height:1.05}
-.logo-text strong{font-size:1.2rem;font-weight:800;letter-spacing:.01em;color:var(--brand)}
-.logo-text span{font-size:.72rem;font-weight:600;letter-spacing:.3em;color:var(--brand-dark)}
+.logo-text{display:flex;flex-direction:column;line-height:1.05;min-width:0}
+.logo-text strong{font-size:1.2rem;font-weight:800;letter-spacing:.01em;color:var(--brand);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.logo-text span{font-size:.72rem;font-weight:600;letter-spacing:.3em;color:var(--brand-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mainnav{display:flex;gap:4px;margin-left:auto}
 .mainnav a{padding:8px 15px;border-radius:999px;font-weight:700;font-size:.88rem;color:#3f3f46;transition:.2s}
 .mainnav a:hover{background:#fdeeee;color:var(--brand)}
 .mainnav a.active{background:var(--brand);color:#fff}
-.header-actions{display:flex;align-items:center;gap:10px;margin-left:auto}
-.mainnav + .header-actions{margin-left:0}
-.cartbtn{position:relative;display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;background:var(--ink);color:#fff;font-size:1.25rem;transition:.2s;box-shadow:var(--shadow)}
+.header-actions{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0}
+.cartbtn{position:relative;display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;background:var(--ink);color:#fff;font-size:1.25rem;transition:.2s;box-shadow:var(--shadow);flex-shrink:0}
 .cartbtn:hover{background:var(--brand)}
 .cartbtn:active{transform:scale(.94)}
 .cart-badge{position:absolute;top:-3px;right:-3px;min-width:21px;height:21px;padding:0 5px;border-radius:999px;background:var(--accent);color:#3b2300;font-size:.7rem;font-weight:800;display:grid;place-items:center;border:2px solid #fff}
-.callbtn{display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;background:var(--brand);color:#fff;font-size:1.2rem;box-shadow:var(--shadow)}
+.callbtn{display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;background:var(--brand);color:#fff;font-size:1.2rem;box-shadow:var(--shadow);flex-shrink:0}
 .callbtn:active{transform:scale(.94)}
 .search-row{padding:0 20px 12px;max-width:1180px;margin:0 auto}
 .searchbox{display:flex;align-items:center;gap:10px;background:#f1efec;border:1px solid var(--line);border-radius:999px;padding:10px 18px;width:100%}
@@ -240,11 +221,13 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
 @media(max-width:899px){
   .mainnav{display:none}
   .tabbar{display:flex}
-  .topbar-inner{padding:8px 12px;gap:10px}
-  .logo svg{width:40px;height:40px}
-  .logo-text strong{font-size:1.08rem}
-  .logo-text span{font-size:.6rem;letter-spacing:.22em}
-  .cartbtn,.callbtn{width:44px;height:44px;font-size:1.15rem}
+  .topbar-inner{padding:8px 12px;gap:8px}
+  .logo{gap:8px}
+  .logo svg{width:38px;height:38px}
+  .logo-text strong{font-size:1rem}
+  .logo-text span{font-size:.56rem;letter-spacing:.18em}
+  .cartbtn,.callbtn{width:42px;height:42px;font-size:1.1rem}
+  .header-actions{gap:8px}
   .search-row{padding:0 12px 10px}
   .utilbar-inner{padding:6px 12px;gap:8px}
   .dist-chip{font-size:.7rem;padding:4px 10px}
@@ -284,6 +267,10 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   .foot-inner{padding:32px 16px 24px;gap:22px}
   .foot-bottom{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
   .toast{bottom:96px}
+}
+@media(max-width:360px){
+  .logo-text span{display:none}
+  .logo-text strong{font-size:.94rem}
 }
 @media(min-width:900px){
   .foot-bottom{padding-bottom:16px}
@@ -596,8 +583,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#e7e2dd"/><text x="200" y="165" font-size="64" text-anchor="middle">⚡</text></svg>'
   );
 
-  /* ===== FIX: robust category-image resolution =====
-     1) valid DB image_url  2) exact id  3) alias map  4) keyword match  5) placeholder */
+  /* Robust category-image resolution: DB url → id alias → keyword → placeholder */
   var CATEGORY_IMG_ALIAS = {
     'lighting':IMG.bulb,'bulbs':IMG.bulb,'bulb':IMG.bulb,'led':IMG.bulb,'led-bulbs':IMG.bulb,'lights':IMG.bulb,'led-lighting':IMG.bulb,
     'switches':IMG.switchp,'switch':IMG.switchp,'modular-switches':IMG.switchp,'modular-switch':IMG.switchp,
@@ -632,16 +618,16 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   ];
   function resolveCategoryImage(c){
     var url = String(c.image_url || '').trim();
-    if (url && /^(https?:\/\/|data:)/i.test(url)) return url;          /* 1) DB URL */
+    if (url && /^(https?:\/\/|data:)/i.test(url)) return url;
     var key = String(c.id || '').toLowerCase().trim();
-    if (CATEGORY_IMG_ALIAS[key]) return CATEGORY_IMG_ALIAS[key];        /* 2)+3) id / alias */
+    if (CATEGORY_IMG_ALIAS[key]) return CATEGORY_IMG_ALIAS[key];
     if (IMG[key]) return IMG[key];
     var hay = key + ' ' + String(c.name || '').toLowerCase();
-    for (var i = 0; i < CATEGORY_IMG_KEYWORDS.length; i++) {            /* 4) keyword */
+    for (var i = 0; i < CATEGORY_IMG_KEYWORDS.length; i++) {
       if (CATEGORY_IMG_KEYWORDS[i][0].test(hay)) return CATEGORY_IMG_KEYWORDS[i][1];
     }
-    console.warn('Category "' + (c.id || c.name) + '" has no usable image_url in Supabase — showing placeholder. Set categories.image_url for this row.');
-    return FALLBACK_IMG;                                                /* 5) placeholder */
+    console.warn('Category "' + (c.id || c.name) + '" has no usable image_url in Supabase — showing placeholder.');
+    return FALLBACK_IMG;
   }
 
   var PRODUCTS   = [];
@@ -656,12 +642,16 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
 
   function inr(n){ return '₹' + Number(n).toLocaleString('en-IN'); }
   function discount(p){ return Math.round((1 - p.price / p.mrp) * 100); }
+  /* FIX: case/whitespace-insensitive category matching (fixes "0 items" when DB casing differs) */
+  function sameCat(a, b){
+    return String(a == null ? '' : a).toLowerCase().trim() === String(b == null ? '' : b).toLowerCase().trim();
+  }
   function findProduct(id){
     for (var i = 0; i < PRODUCTS.length; i++) if (String(PRODUCTS[i].id) === String(id)) return PRODUCTS[i];
     return null;
   }
   function catName(id){
-    for (var i = 0; i < CATEGORIES.length; i++) if (CATEGORIES[i].id === id) return CATEGORIES[i].name;
+    for (var i = 0; i < CATEGORIES.length; i++) if (sameCat(CATEGORIES[i].id, id)) return CATEGORIES[i].name;
     return 'Electricals';
   }
 
@@ -677,7 +667,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
         return {
           id: p.id, name: p.name, brand: p.brand || '', cat: p.cat,
           price: Number(p.price), mrp: Number(p.mrp),
-          img: p.img || IMG[p.cat] || FALLBACK_IMG,
+          img: p.img || IMG[String(p.cat || '').toLowerCase()] || FALLBACK_IMG,
           popular: Boolean(p.popular),
           stock: Number(p.stock || 0),
           description: p.description || ''
@@ -695,11 +685,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
         .order('sort_order', { ascending: true });
       if (error){ console.error('loadCategories error:', error); state.loadError = true; return; }
       CATEGORIES = (data || []).map(function(c){
-        return {
-          id: c.id,
-          name: c.name || String(c.id),
-          img: resolveCategoryImage(c)   /* FIX: never blank — DB url → alias → keyword → placeholder */
-        };
+        return { id: c.id, name: c.name || String(c.id), img: resolveCategoryImage(c) };
       });
     } catch (e) { console.error('loadCategories exception:', e); state.loadError = true; }
   }
@@ -718,7 +704,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
         .eq('is_active', true);
       if (error){ console.error('loadDeals error:', error); return; }
       DEALS = (data || []).filter(dealDateOk).map(function(d){
-        return { title: d.title, desc: d.description, img: d.img || IMG[d.cat] || FALLBACK_IMG, cat: d.cat };
+        return { title: d.title, desc: d.description, img: d.img || IMG[String(d.cat || '').toLowerCase()] || FALLBACK_IMG, cat: d.cat };
       });
     } catch (e) { console.error('loadDeals exception:', e); }
   }
@@ -785,7 +771,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
 
   function makeImg(src, alt, lazy){
     var im = document.createElement('img');
-    var s = (src && String(src).trim()) ? String(src) : FALLBACK_IMG;  /* FIX: never empty/broken src */
+    var s = (src && String(src).trim()) ? String(src) : FALLBACK_IMG;
     im.src = s; im.alt = alt; im.decoding = 'async';
     if (lazy) im.loading = 'lazy';
     im.addEventListener('error', function () { im.src = FALLBACK_IMG; }, { once: true });
@@ -799,7 +785,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     var lab = document.createElement('div'); lab.className = 'cat-label';
     var st = document.createElement('strong'); st.textContent = cat.name;
     var sp = document.createElement('span');
-    var count = PRODUCTS.filter(function(p){ return p.cat === cat.id; }).length;
+    var count = PRODUCTS.filter(function(p){ return sameCat(p.cat, cat.id); }).length;
     sp.textContent = count + ' item' + (count === 1 ? '' : 's');
     lab.appendChild(st); lab.appendChild(sp); b.appendChild(lab);
     return b;
@@ -852,7 +838,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     if (!nodes.length) {
       var note = document.createElement('div'); note.className = 'empty-note';
       if (emptyMsg) note.textContent = emptyMsg;
-      else if (state.loadError) note.textContent = '️ Could not load products right now. Please check your internet connection and refresh.';
+      else if (state.loadError) note.textContent = '⚠️ Could not load products right now. Please check your internet connection and refresh.';
       else note.textContent = 'No products found. Try a different search or category.';
       el.appendChild(note); return;
     }
@@ -925,7 +911,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     head.hidden = false;
     byId('catResultTitle').textContent = catName(state.category);
     byId('catResultSub').textContent = 'Everything we stock in this category';
-    fillGrid(grid, PRODUCTS.filter(function(p){ return p.cat === state.category; }).map(productCard));
+    fillGrid(grid, PRODUCTS.filter(function(p){ return sameCat(p.cat, state.category); }).map(productCard));
   }
 
   function cartQtyTotal(){ return state.cart.reduce(function(s, it){ return s + it.qty; }, 0); }

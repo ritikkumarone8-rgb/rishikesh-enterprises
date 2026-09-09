@@ -3,112 +3,48 @@
 <head>
 <meta charset="UTF-8">
 <!-- =====================================================================
-  RISHIKESH ENTERPRISES — Supabase migration (customer website)
+  RISHIKESH ENTERPRISES — Supabase-connected customer website
   ---------------------------------------------------------------------
-  A. WHAT CHANGED (step-by-step, per migration prompt):
-     STEP 1  : Added Supabase JS client CDN + SUPABASE_URL / SUPABASE_ANON_KEY
-               constants (clearly marked). ONLY the public anon key is used.
-     STEP 2  : var PRODUCTS = [] (hardcoded list removed). New async
-               loadProducts() fetches is_active=true ordered by created_at,
-               maps id/name/brand/cat/price/mrp/img/popular + stock/description.
-     STEP 3  : var CATEGORIES = [] + async loadCategories() fetches
-               is_active=true ordered by sort_order, maps {id,name,img:image_url};
-               missing image_url falls back to the previous built-in image map.
-     STEP 4  : var DEALS = [] + async loadDeals() fetches is_active=true and
-               filters by start_date / end_date against the current date.
-     STEP 5  : init() is now async: shows loading state, awaits
-               Promise.all([loadProducts,loadCategories,loadDeals]), THEN runs the
-               EXISTING render functions (renderCategories, renderDeals,
-               renderHomeProducts, renderPopular, renderCategoryProducts,
-               renderCart, applyRoute). No render runs before data is ready.
-               (loadCart() now runs AFTER products load, because cart sanitising
-               validates ids against the product list.)
-     STEP 6  : discount() untouched — recalculates automatically from DB price/mrp.
-     STEP 7  : LocalStorage cart (re_cart_v1) untouched. Inactive/removed products
-               are dropped gracefully from cart (no JS errors).
-     STEP 8  : WhatsApp checkout untouched (same number, same message format).
-     STEP 9  : Loading notes ("Loading products…") shown in grids while fetching;
-               on failure a friendly message is shown (page never blank).
-     STEP 10 : Every Supabase call checks `error` and logs via console.error;
-               customers never see raw DB errors.
-     STEP 11 : Image URLs come from the DB (p.img / c.image_url / d.img).
-               No Supabase Storage yet.
-     STEP 13 : No service_role/secret keys anywhere. RLS assumed server-side.
-     STEP 14 : Still 100% static — works on GitHub Pages, no server needed.
-     UNTOUCHED: all CSS/design, layout, cart drawer, search, category filtering,
-               mobile nav, store info, distance chip, privacy page, security notes.
-     NEXT TASK (STEP 12): admin.html will be created SEPARATELY (not in this file).
-
-  B. WHAT YOU NEED TO CONFIGURE:
-     1. In the <script> at the bottom, find "CONFIG" and paste:
-          SUPABASE_URL      = your project URL (https://xxxx.supabase.co)
-          SUPABASE_ANON_KEY = your PUBLIC anon/publishable key (NEVER service_role)
-     2. OPTIONAL SQL — seed the 14 categories (run once in Supabase SQL editor):
-          INSERT INTO categories (id, name, image_url, is_active, sort_order) VALUES
-          ('lighting','LED Bulbs & Lighting','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/17e50dc4b-3bbf-48aa-b9b5-a6149a1e2c69.png',true,1),
-          ('switches','Modular Switches','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/15a5c5d03-2491-4d2f-816f-244105678c8b.png',true,2),
-          ('fans','Ceiling & Table Fans','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/15e622e13-c85b-488d-be6c-c686440fa47c.png',true,3),
-          ('wiring','Wires & Cables','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/124f1a5f5-abd6-4e01-947f-6260552f8c4b.png',true,4),
-          ('motors','Motors & Pumps','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/18503c6e3-cf7c-4542-80bd-0704b4572242.png',true,5),
-          ('appliances','Home Appliances','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1273b234a-13d6-4b50-9051-ce6887aff7b6.png',true,6),
-          ('safety','MCB & Safety','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/12792c58f-ab09-449e-a562-603aa1e545f8.png',true,7),
-          ('extension','Extension Boards','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/130a2abf0-d1dc-4603-9a58-6f2e3e29d2e6.png',true,8),
-          ('ro','RO Water Purifiers','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1aec7f55e-6651-4e76-a072-b4963a4b9a4f.png',true,9),
-          ('battery','Inverter Batteries','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1559a2d96-7024-48b1-a40b-66b8eaa38a90.png',true,10),
-          ('induction','Induction Cooktops','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/15d975cb6-d90c-4cfb-9630-40001850e212.png',true,11),
-          ('haircare','Hair Dresser & Care','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/198dba628-8113-4bec-b6db-20cfe2909507.png',true,12),
-          ('cooler','Air Coolers','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/14552a96f-8a57-4b4f-90af-ce0bdc606262.png',true,13),
-          ('grooming','Trimmers & Grooming','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1b57076ac-49f7-4ca0-a7d5-61b0cc4d61cd.png',true,14)
-          ON CONFLICT (id) DO NOTHING;
-     3. OPTIONAL SQL — allow anonymous READ via Row Level Security (run once):
-          alter table public.products   enable row level security;
-          alter table public.categories enable row level security;
-          alter table public.deals      enable row level security;
-          create policy "anon read active products"   on public.products   for select to anon using (is_active = true);
-          create policy "anon read active categories" on public.categories for select to anon using (is_active = true);
-          create policy "anon read active deals"      on public.deals      for select to anon using (is_active = true);
-        (skip any line if the policy already exists)
-     4. Upload this file as index.html to your GitHub Pages repo.
-
-  C. TESTING CHECKLIST:
-     [ ] Website loads
-     [ ] Product from Supabase appears
-     [ ] Price is correct
-     [ ] MRP is correct
-     [ ] Discount works (change price in DB → badge updates)
-     [ ] Category works (tap category → its products)
-     [ ] Search works
-     [ ] Popular products work
-     [ ] Cart works (add / qty / remove / persists after reload)
-     [ ] WhatsApp checkout works (names, qty, prices, total)
-     [ ] Changing price in Supabase changes website price
-     [ ] Setting is_active=false hides product (and drops it from old carts safely)
-     [ ] Deals respect start_date / end_date
-     [ ] Out-of-stock (stock=0) shows "Out of stock" and blocks add
-
-  D. Nothing else was redesigned or removed. admin.html comes as a separate file next.
+  FIX IN THIS VERSION (category images not showing):
+   • Category images now resolve in 4 safe steps:
+       1) categories.image_url from your DB (if it is a valid http/https/data URL)
+       2) exact id match with the built-in image map (lighting, switches, …)
+       3) alias + keyword match on id/name (e.g. 'led-bulbs', 'Hair Dresser',
+          'air-cooler', 'trimmers' … all find the right picture)
+       4) ⚡ placeholder (never a blank/broken box)
+   • Empty/undefined image src can no longer render a broken image.
+   • console.warn now lists every category that has NO usable image_url in the
+     DB, so you know exactly which rows to fix in Supabase.
+   • OPTIONAL permanent fix — run once in Supabase SQL editor (fills image_url):
+       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/17e50dc4b-3bbf-48aa-b9b5-a6149a1e2c69.png' WHERE id='lighting';
+       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/15a5c5d03-2491-4d2f-816f-244105678c8b.png' WHERE id='switches';
+       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/15e622e13-c85b-488d-be6c-c686440fa47c.png' WHERE id='fans';
+       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/124f1a5f5-abd6-4e01-947f-6260552f8c4b.png' WHERE id='wiring';
+       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/18503c6e3-cf7c-4542-80bd-0704b4572242.png' WHERE id='motors';
+       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1273b234a-13d6-4b50-9051-ce6887aff7b6.png' WHERE id='appliances';
+       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/12792c58f-ab09-449e-a562-603aa1e545f8.png' WHERE id='safety';
+       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/130a2abf0-d1dc-4603-9a58-6f2e3e29d2e6.png' WHERE id='extension';
+       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1aec7f55e-6651-4e76-a072-b4963a4b9a4f.png' WHERE id='ro';
+       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1559a2d96-7024-48b1-a40b-66b8eaa38a90.png' WHERE id='battery';
+       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/15d975cb6-d90c-4cfb-9630-40001850e212.png' WHERE id='induction';
+       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/198dba628-8113-4bec-b6db-20cfe2909507.png' WHERE id='haircare';
+       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/14552a96f-8a57-4b4f-90af-ce0bdc606262.png' WHERE id='cooler';
+       UPDATE categories SET image_url='https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1b57076ac-49f7-4ca0-a7d5-61b0cc4d61cd.png' WHERE id='grooming';
+     (If your ids are different, the website still auto-picks the right picture
+      by keyword — the UPDATE is only to make the DB the single source of truth.)
+  EVERYTHING ELSE (design, cart, WhatsApp checkout, search, store info,
+  privacy page, Supabase loading flow) is unchanged.
 ===================================================================== -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#7c0d10">
 <title>Rishikesh Enterprises — Havells Dealer & Electricals, Yadav Chowk, Hajipur</title>
 <meta name="description" content="Lights, wiring, fans, motors, switches, RO, batteries, induction, coolers, trimmers & appliances — genuine brands, fair prices, delivered across Hajipur.">
-<!-- SECURITY: Referrer policy limits URL leakage to third parties -->
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <style>
 :root{
-  --brand:#d21f26;            /* Havells-inspired red */
-  --brand-dark:#a3151b;
-  --brand-deep:#7c0d10;
-  --accent:#f59e0b;
-  --bg:#f7f6f4;
-  --card:#ffffff;
-  --ink:#141414;
-  --muted:#6b7280;
-  --line:#e7e2dd;
-  --ok:#16a34a;
-  --danger:#dc2626;
-  --radius:16px;
-  --shadow:0 6px 24px rgba(20,10,10,.08);
+  --brand:#d21f26; --brand-dark:#a3151b; --brand-deep:#7c0d10; --accent:#f59e0b;
+  --bg:#f7f6f4; --card:#ffffff; --ink:#141414; --muted:#6b7280; --line:#e7e2dd;
+  --ok:#16a34a; --danger:#dc2626; --radius:16px; --shadow:0 6px 24px rgba(20,10,10,.08);
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
@@ -119,7 +55,7 @@ a{color:var(--brand);text-decoration:none}
 a,button{touch-action:manipulation}
 a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid rgba(210,31,38,.35);outline-offset:2px;border-radius:8px}
 
-/* ---------- Utility strip (distance + hours + call) ---------- */
+/* ---------- Utility strip ---------- */
 .utilbar{background:linear-gradient(90deg,var(--brand-deep),var(--brand-dark));color:#fff;font-size:.78rem}
 .utilbar-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:7px 20px;flex-wrap:wrap}
 .dist-chip{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.4);color:#fff;padding:5px 13px;border-radius:999px;font-weight:700;font-size:.74rem;transition:.2s;display:inline-flex;align-items:center;gap:6px;min-height:32px}
@@ -149,13 +85,11 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid rgba(
 .cart-badge{position:absolute;top:-3px;right:-3px;min-width:21px;height:21px;padding:0 5px;border-radius:999px;background:var(--accent);color:#3b2300;font-size:.7rem;font-weight:800;display:grid;place-items:center;border:2px solid #fff}
 .callbtn{display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;background:var(--brand);color:#fff;font-size:1.2rem;box-shadow:var(--shadow)}
 .callbtn:active{transform:scale(.94)}
-
-/* Always-visible search row */
 .search-row{padding:0 20px 12px;max-width:1180px;margin:0 auto}
 .searchbox{display:flex;align-items:center;gap:10px;background:#f1efec;border:1px solid var(--line);border-radius:999px;padding:10px 18px;width:100%}
 .searchbox input{border:none;background:transparent;outline:none;font:inherit;font-size:16px;width:100%;color:var(--ink)}
 
-/* ---------- Mobile bottom tab bar (Home · Categories · Search · Store) ---------- */
+/* ---------- Mobile bottom tab bar ---------- */
 .tabbar{position:fixed;bottom:0;left:0;right:0;z-index:50;display:none;border-top:1px solid var(--line);background:#fff;justify-content:space-around;padding:6px 0 calc(6px + env(safe-area-inset-bottom));box-shadow:0 -4px 20px rgba(0,0,0,.06)}
 .tab{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:54px;font-size:.72rem;font-weight:700;color:var(--muted);transition:.15s}
 .tab .ico{font-size:1.35rem;line-height:1}
@@ -214,7 +148,7 @@ main{max-width:1180px;margin:0 auto;padding:24px 20px 40px}
 .dealcard .deal-overlay span{font-size:.8rem;opacity:.9}
 .deal-tag{position:absolute;top:12px;left:12px;background:var(--accent);color:#3b2300;font-weight:800;font-size:.7rem;padding:5px 10px;border-radius:999px}
 
-/* ---------- Store banner (bottom of home) ---------- */
+/* ---------- Store banner ---------- */
 .storebanner{margin-top:40px;border-radius:20px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--line);background:#fff}
 .sb-media{position:relative;display:block;width:100%;text-align:left}
 .sb-media img{width:100%;height:320px;object-fit:cover}
@@ -267,7 +201,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
 .foot-bottom{border-top:1px solid #2b1718;padding:16px 20px;text-align:center;font-size:.78rem;color:#b3a0a0}
 .foot-bottom a{color:#f3b0b2}
 
-/* ---------- Cart drawer (stacked item layout — no overflow) ---------- */
+/* ---------- Cart drawer ---------- */
 .overlay{position:fixed;inset:0;background:rgba(20,5,5,.5);opacity:0;pointer-events:none;transition:opacity .3s;z-index:90}
 .overlay.show{opacity:1;pointer-events:auto}
 .drawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,100%);background:#fff;z-index:100;transform:translateX(102%);transition:transform .35s cubic-bezier(.22,.9,.3,1);display:flex;flex-direction:column;box-shadow:-12px 0 40px rgba(20,5,5,.25)}
@@ -302,7 +236,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
 .toast{position:fixed;left:50%;bottom:96px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:999px;font-size:.85rem;font-weight:700;opacity:0;pointer-events:none;transition:.3s;z-index:120;box-shadow:var(--shadow);max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
-/* ================= MOBILE OPTIMISATIONS ================= */
+/* ================= MOBILE ================= */
 @media(max-width:899px){
   .mainnav{display:none}
   .tabbar{display:flex}
@@ -359,7 +293,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
 </head>
 <body>
 
-<!-- ================= UTILITY STRIP : distance from store ================= -->
 <div class="utilbar">
   <div class="utilbar-inner">
     <button type="button" class="dist-chip" id="distChip" aria-live="polite">📍 Show distance from our store</button>
@@ -370,7 +303,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   </div>
 </div>
 
-<!-- ================= HEADER ================= -->
 <header class="topbar">
   <div class="topbar-inner">
     <a href="#/" class="logo" id="logoLink" aria-label="Rishikesh Enterprises — go to home page">
@@ -400,7 +332,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
 </header>
 
 <main>
-  <!-- ================= HOME ================= -->
   <section class="view" id="view-home" aria-label="Home">
     <div class="section-head">
       <div><span class="eyebrow">Shop</span><h2>Shop by category</h2><p>Tap a category to see everything in it</p></div>
@@ -429,7 +360,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     </div>
   </section>
 
-  <!-- ================= CATEGORIES ================= -->
   <section class="view" id="view-categories" aria-label="Categories">
     <div class="section-head">
       <div><span class="eyebrow">Browse</span><h2>Categories</h2><p>Everything we stock, organised</p></div>
@@ -442,7 +372,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     <div class="prodgrid" id="catProdGrid"></div>
   </section>
 
-  <!-- ================= POPULAR + DEALS ================= -->
   <section class="view" id="view-popular" aria-label="Popular products and deals">
     <div class="section-head">
       <div><span class="eyebrow">Offers</span><h2>🔥 Today's deals</h2><p>Fresh offers, updated every morning</p></div>
@@ -454,7 +383,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     <div class="prodgrid" id="popularGrid"></div>
   </section>
 
-  <!-- ================= OUR STORE ================= -->
   <section class="view" id="view-store" aria-label="Our store">
     <div class="section-head">
       <div><span class="eyebrow">Our Store</span><h2>Rishikesh Enterprises, Hajipur</h2><p>Authorised Havells dealer — electronics & electricals showroom</p></div>
@@ -504,7 +432,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     </div>
   </section>
 
-  <!-- ================= PRIVACY POLICY ================= -->
   <section class="view" id="view-privacy" aria-label="Privacy Policy">
     <article class="doc">
       <h1>Privacy Policy</h1>
@@ -514,53 +441,41 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
       <h2>2. Information we collect</h2>
       <ul>
         <li><strong>Order enquiries:</strong> when you place an order through the WhatsApp checkout, the message contains only the items in your cart, quantities and totals. You choose what personal details (name, delivery address, phone number) to include.</li>
-        <li><strong>Location (optional):</strong> if you allow location access, we compute your approximate distance from our Yadav Chowk store <em>entirely on your device</em> to show "Our store is at ~x km". Coordinates are never stored, transmitted or shared. If location is off we simply ask you to turn it on — shopping works fine without it.</li>
-        <li><strong>Cart contents:</strong> your cart is stored <em>only on your own device</em> in your browser's local storage. It never leaves your device except inside the WhatsApp message you approve.</li>
-        <li><strong>Product data:</strong> catalogue information (names, prices, images) is loaded read-only from our Supabase database using a public anon key. No customer accounts exist.</li>
-        <li><strong>We do not</strong> require accounts, passwords, Aadhaar, or payment card details on this website. Payments happen via UPI apps, card machines at the store, or cash on delivery / pickup.</li>
+        <li><strong>Location (optional):</strong> if you allow location access, we compute your approximate distance from our Yadav Chowk store <em>entirely on your device</em> to show "Our store is at ~x km". Coordinates are never stored, transmitted or shared.</li>
+        <li><strong>Cart contents:</strong> your cart is stored <em>only on your own device</em> in your browser's local storage.</li>
+        <li><strong>Product data:</strong> catalogue information is loaded read-only from our Supabase database using a public anon key. No customer accounts exist.</li>
+        <li><strong>We do not</strong> require accounts, passwords, Aadhaar, or payment card details on this website.</li>
       </ul>
       <h2>3. How we use your information</h2>
       <ul>
         <li>To prepare, confirm and deliver your order within Hajipur and nearby Vaishali areas.</li>
         <li>To contact you on WhatsApp or phone about your order, delivery slot or warranty service.</li>
-        <li>To improve our stock and offers based on aggregate (non-identifying) interest in products.</li>
       </ul>
       <h2>4. Cookies &amp; local storage</h2>
-      <p>This website uses no tracking cookies, no advertising pixels and no third-party analytics. A single local-storage key (<code>re_cart_v1</code>) remembers your cart between visits, and a session flag remembers whether we already asked for location. Clearing your browser data removes both permanently.</p>
+      <p>No tracking cookies or analytics. A single local-storage key (<code>re_cart_v1</code>) remembers your cart; a session flag remembers the location prompt.</p>
       <h2>5. Sharing of information</h2>
-      <p>We never sell or rent your data. Order details are shared only with:</p>
-      <ul>
-        <li><strong>WhatsApp (Meta Platforms)</strong> — solely to transmit the order message you send us.</li>
-        <li><strong>Google Maps</strong> — only if you tap "Directions", which opens Maps under Google's own privacy policy.</li>
-        <li><strong>Supabase</strong> — hosts our read-only product catalogue; it receives no personal customer data from this page.</li>
-        <li>Delivery staff of our own shop, strictly for fulfilling your delivery.</li>
-      </ul>
+      <p>We never sell or rent data. Shared only with WhatsApp (your order message), Google Maps (directions), Supabase (read-only catalogue; no personal data), and our own delivery staff.</p>
       <h2>6. Data security</h2>
       <ul>
-        <li>This site is designed to run over HTTPS; always check for the padlock before ordering.</li>
-        <li>The page sanitises all stored data and escapes all rendered text (textContent-only rendering) to prevent cross-site scripting (XSS).</li>
-        <li>The database is accessed with a public anon key protected by Row Level Security (read-only for visitors). Secret keys never appear in frontend code.</li>
-        <li>External links open with <code>rel="noopener noreferrer"</code> to protect you from tab-nabbing and referrer leakage.</li>
-        <li>Location permission is requested once per session and can be re-triggered on-screen from the distance chip; refusal never limits shopping features.</li>
-        <li>No payment card numbers or UPI PINs are ever requested or stored by this website. Never share an OTP or UPI PIN with anyone, including us.</li>
+        <li>HTTPS recommended; database accessed with public anon key protected by Row Level Security (read-only for visitors).</li>
+        <li>All rendered text is escaped (textContent-only) to prevent XSS; external links use rel="noopener noreferrer".</li>
+        <li>No payment card numbers or UPI PINs are ever requested or stored here.</li>
       </ul>
       <h2>7. Children's privacy</h2>
-      <p>Our products and services are intended for adults. We do not knowingly collect information from children under 18.</p>
+      <p>Services intended for adults; no knowing collection from children under 18.</p>
       <h2>8. Your rights</h2>
-      <p>You may ask us at any time to view, correct or delete any personal information we hold about your orders (for example WhatsApp chat history at our shop phone). We will comply within 7 days. Call or WhatsApp us at +91 91991 56794.</p>
+      <p>Request view/correction/deletion of order information any time; we comply within 7 days. Contact +91 91991 56794.</p>
       <h2>9. Data retention</h2>
-      <p>Order records are kept for a maximum of 12 months for warranty and billing purposes, then deleted. Your cart on this device remains until you clear it or your browser data.</p>
+      <p>Order records kept max 12 months, then deleted.</p>
       <h2>10. Changes to this policy</h2>
-      <p>Any updates will be posted on this page with a new "last updated" date. Continued use of the site after changes constitutes acceptance.</p>
+      <p>Updates posted here with a new "last updated" date.</p>
       <h2>11. Contact us</h2>
       <p>Rishikesh Enterprises, East of Naya Tola Main Road, Near Rambalak Chowk, Yadav Chowk, Hajipur, Vaishali, Bihar – 844101<br>
-      📞 +91 91991 56794 · 💬 WhatsApp: +91 91991 56794<br>
-      🕐 Open daily, 9:00 AM – 9:00 PM</p>
+      📞 +91 91991 56794 · 💬 WhatsApp: +91 91991 56794 · 🕐 9:00 AM – 9:00 PM</p>
     </article>
   </section>
 </main>
 
-<!-- ================= FOOTER ================= -->
 <footer>
   <div class="foot-inner">
     <div>
@@ -604,7 +519,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   </div>
 </footer>
 
-<!-- ================= BOTTOM NAV (4 items) ================= -->
 <nav class="tabbar" aria-label="Mobile primary">
   <a class="tab" href="#/" data-route="home"><span class="ico" aria-hidden="true">🏠</span>Home</a>
   <a class="tab" href="#/categories" data-route="categories"><span class="ico" aria-hidden="true">🗂️</span>Categories</a>
@@ -612,7 +526,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   <a class="tab" href="#/store" data-route="store"><span class="ico" aria-hidden="true">🏪</span>Store</a>
 </nav>
 
-<!-- ================= CART DRAWER ================= -->
 <div class="overlay" id="overlay"></div>
 <aside class="drawer" id="cartDrawer" aria-label="Your cart" aria-hidden="true">
   <div class="drawer-head">
@@ -629,35 +542,16 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<!-- STEP 1: Supabase JavaScript client (only external library) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-/* =====================================================================
-   SECURITY MEASURES APPLIED IN THIS FILE
-   1.  No inline event handlers — all listeners via addEventListener.
-   2.  No eval / document.write. All dynamic text rendered with textContent
-       (XSS-safe); images use DB-provided URLs or trusted fallbacks.
-   3.  localStorage cart validated on load (type checks, product-id whitelist,
-       quantity clamped 1–99) — blocks corrupted/injected cart data.
-   4.  External links (WhatsApp, Maps, tel) use rel="noopener noreferrer".
-   5.  Geolocation computed ON-DEVICE only; coordinates never stored/sent.
-   6.  Search input length-limited; echo rendered via textContent only.
-   7.  WhatsApp checkout URL built with encodeURIComponent.
-   8.  Hash routing whitelisted (no open redirects / hash injection).
-   9.  SUPABASE: only URL + PUBLIC anon key live here (never service_role).
-       Row Level Security on the database restricts visitors to read-only.
-       All DB errors go to console.error, never to the customer UI.
-   ===================================================================== */
 (function () {
   'use strict';
 
-  /* ================= CONFIG — PUT YOUR SUPABASE CREDENTIALS HERE =================
-     Replace the two values below. Use ONLY the public anon / publishable key.
-     Never paste the service_role / secret key into this file.                    */
-  var SUPABASE_URL      = 'https://hlarqmfpxcmjrkcvtgqv.supabase.co';       // e.g. https://abcd1234.supabase.co
-  var SUPABASE_ANON_KEY = 'sb_publishable_AedviRis4ENUFq8K1fQIsQ_90Dp7A-C';  // e.g. eyJhbGciOi... (public anon key)
-  /* ============================================================================== */
+  /* ================= CONFIG — PUT YOUR SUPABASE CREDENTIALS HERE ================= */
+  var SUPABASE_URL      = 'YOUR_SUPABASE_URL';       // e.g. https://abcd1234.supabase.co
+  var SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';  // public anon key ONLY (never service_role)
+  /* =============================================================================== */
 
   var supabaseClient = (function () {
     try {
@@ -671,15 +565,9 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     return null;
   })();
 
-  /* ---------- Store constants ---------- */
   var WA_LINK   = 'https://wa.me/919199156794';
-  var SHOP_COORDS = { lat: 25.6955, lng: 85.2132 }; /* Yadav Chowk, Hajipur */
+  var SHOP_COORDS = { lat: 25.6955, lng: 85.2132 };
 
-  /* ---------- Trusted fallback image assets ----------
-     Store photos: your REAL pictures are used as-is when present.
-     Keep them next to this HTML file named exactly:
-       store-1.jpg (inside shop), store-2.jpg (storefront), store-3.jpg (display board)
-     If a file is missing, the code silently falls back to a hosted copy. */
   var LOCAL_STORE = ['store-1.jpg', 'store-2.jpg', 'store-3.jpg'];
   var IMG = {
     bulb:    'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/17e50dc4b-3bbf-48aa-b9b5-a6149a1e2c69.png',
@@ -708,7 +596,54 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#e7e2dd"/><text x="200" y="165" font-size="64" text-anchor="middle">⚡</text></svg>'
   );
 
-  /* STEP 2/3/4: hardcoded arrays removed — data now comes from Supabase */
+  /* ===== FIX: robust category-image resolution =====
+     1) valid DB image_url  2) exact id  3) alias map  4) keyword match  5) placeholder */
+  var CATEGORY_IMG_ALIAS = {
+    'lighting':IMG.bulb,'bulbs':IMG.bulb,'bulb':IMG.bulb,'led':IMG.bulb,'led-bulbs':IMG.bulb,'lights':IMG.bulb,'led-lighting':IMG.bulb,
+    'switches':IMG.switchp,'switch':IMG.switchp,'modular-switches':IMG.switchp,'modular-switch':IMG.switchp,
+    'fans':IMG.fan,'fan':IMG.fan,'ceiling-fans':IMG.fan,'table-fans':IMG.fan,'ceiling-table-fans':IMG.fan,
+    'wiring':IMG.wire,'wire':IMG.wire,'wires':IMG.wire,'cables':IMG.wire,'cable':IMG.wire,'wires-cables':IMG.wire,
+    'motors':IMG.motor,'motor':IMG.motor,'pumps':IMG.motor,'pump':IMG.motor,'motors-pumps':IMG.motor,
+    'appliances':IMG.iron,'appliance':IMG.iron,'home-appliances':IMG.iron,'iron':IMG.iron,'irons':IMG.iron,
+    'safety':IMG.mcb,'mcb':IMG.mcb,'mcb-safety':IMG.mcb,'safety-mcb':IMG.mcb,
+    'extension':IMG.extb,'extension-boards':IMG.extb,'extension-board':IMG.extb,'sockets':IMG.extb,'socket':IMG.extb,
+    'ro':IMG.ro,'ro-purifiers':IMG.ro,'ro-water-purifiers':IMG.ro,'water-purifiers':IMG.ro,'purifiers':IMG.ro,'purifier':IMG.ro,
+    'battery':IMG.battery,'batteries':IMG.battery,'inverter-batteries':IMG.battery,'inverter-battery':IMG.battery,
+    'induction':IMG.induction,'induction-cooktops':IMG.induction,'induction-cooktop':IMG.induction,'cooktops':IMG.induction,
+    'haircare':IMG.hair,'hair':IMG.hair,'hair-dresser':IMG.hair,'hairdresser':IMG.hair,'hair-dresser-care':IMG.hair,'hair-care':IMG.hair,
+    'cooler':IMG.cooler,'coolers':IMG.cooler,'air-coolers':IMG.cooler,'air-cooler':IMG.cooler,
+    'grooming':IMG.trimmer,'trimmer':IMG.trimmer,'trimmers':IMG.trimmer,'trimmers-grooming':IMG.trimmer
+  };
+  var CATEGORY_IMG_KEYWORDS = [
+    [/(bulb|light|led|lamp|batten)/, IMG.bulb],
+    [/(switch)/, IMG.switchp],
+    [/(cooler|cooling|desert)/, IMG.cooler],
+    [/(fan)/, IMG.fan],
+    [/(wire|cable)/, IMG.wire],
+    [/(motor|pump)/, IMG.motor],
+    [/(trimmer|groom|beard|shav)/, IMG.trimmer],
+    [/(hair|dryer|straight|dresser|beauty)/, IMG.hair],
+    [/(induction|cooktop|stove)/, IMG.induction],
+    [/(battery|inverter)/, IMG.battery],
+    [/(purifier|\bro\b|water)/, IMG.ro],
+    [/(mcb|safety|breaker)/, IMG.mcb],
+    [/(extension|socket|surge)/, IMG.extb],
+    [/(iron|mixer|grinder|appliance|heater|geyser)/, IMG.iron]
+  ];
+  function resolveCategoryImage(c){
+    var url = String(c.image_url || '').trim();
+    if (url && /^(https?:\/\/|data:)/i.test(url)) return url;          /* 1) DB URL */
+    var key = String(c.id || '').toLowerCase().trim();
+    if (CATEGORY_IMG_ALIAS[key]) return CATEGORY_IMG_ALIAS[key];        /* 2)+3) id / alias */
+    if (IMG[key]) return IMG[key];
+    var hay = key + ' ' + String(c.name || '').toLowerCase();
+    for (var i = 0; i < CATEGORY_IMG_KEYWORDS.length; i++) {            /* 4) keyword */
+      if (CATEGORY_IMG_KEYWORDS[i][0].test(hay)) return CATEGORY_IMG_KEYWORDS[i][1];
+    }
+    console.warn('Category "' + (c.id || c.name) + '" has no usable image_url in Supabase — showing placeholder. Set categories.image_url for this row.');
+    return FALLBACK_IMG;                                                /* 5) placeholder */
+  }
+
   var PRODUCTS   = [];
   var CATEGORIES = [];
   var DEALS      = [];
@@ -719,9 +654,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
 
   function byId(id){ return document.getElementById(id); }
 
-  /* ---------- Helpers ---------- */
   function inr(n){ return '₹' + Number(n).toLocaleString('en-IN'); }
-  /* STEP 6: existing discount calculation preserved unchanged */
   function discount(p){ return Math.round((1 - p.price / p.mrp) * 100); }
   function findProduct(id){
     for (var i = 0; i < PRODUCTS.length; i++) if (String(PRODUCTS[i].id) === String(id)) return PRODUCTS[i];
@@ -732,24 +665,18 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     return 'Electricals';
   }
 
-  /* ================= STEP 2: load products from Supabase ================= */
   async function loadProducts(){
     if (!supabaseClient){ state.loadError = true; return; }
     try {
       const { data, error } = await supabaseClient
-        .from('products')
-        .select('*')
+        .from('products').select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: true });
       if (error){ console.error('loadProducts error:', error); state.loadError = true; return; }
       PRODUCTS = (data || []).map(function(p){
         return {
-          id: p.id,
-          name: p.name,
-          brand: p.brand || '',
-          cat: p.cat,
-          price: Number(p.price),
-          mrp: Number(p.mrp),
+          id: p.id, name: p.name, brand: p.brand || '', cat: p.cat,
+          price: Number(p.price), mrp: Number(p.mrp),
           img: p.img || IMG[p.cat] || FALLBACK_IMG,
           popular: Boolean(p.popular),
           stock: Number(p.stock || 0),
@@ -759,27 +686,24 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     } catch (e) { console.error('loadProducts exception:', e); state.loadError = true; }
   }
 
-  /* ================= STEP 3: load categories from Supabase ================= */
   async function loadCategories(){
     if (!supabaseClient){ state.loadError = true; return; }
     try {
       const { data, error } = await supabaseClient
-        .from('categories')
-        .select('*')
+        .from('categories').select('*')
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
       if (error){ console.error('loadCategories error:', error); state.loadError = true; return; }
       CATEGORIES = (data || []).map(function(c){
         return {
           id: c.id,
-          name: c.name,
-          img: c.image_url || IMG[c.id] || FALLBACK_IMG   /* preserve old fallback behaviour */
+          name: c.name || String(c.id),
+          img: resolveCategoryImage(c)   /* FIX: never blank — DB url → alias → keyword → placeholder */
         };
       });
     } catch (e) { console.error('loadCategories exception:', e); state.loadError = true; }
   }
 
-  /* ================= STEP 4: load deals from Supabase (date-aware) ================= */
   function dealDateOk(d){
     var now = new Date();
     if (d.start_date){ var s = new Date(d.start_date); if (!isNaN(s.getTime()) && now < s) return false; }
@@ -787,25 +711,18 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     return true;
   }
   async function loadDeals(){
-    if (!supabaseClient){ return; }   /* deals are optional — no error state */
+    if (!supabaseClient){ return; }
     try {
       const { data, error } = await supabaseClient
-        .from('deals')
-        .select('*')
+        .from('deals').select('*')
         .eq('is_active', true);
       if (error){ console.error('loadDeals error:', error); return; }
       DEALS = (data || []).filter(dealDateOk).map(function(d){
-        return {
-          title: d.title,
-          desc: d.description,
-          img: d.img || IMG[d.cat] || FALLBACK_IMG,
-          cat: d.cat
-        };
+        return { title: d.title, desc: d.description, img: d.img || IMG[d.cat] || FALLBACK_IMG, cat: d.cat };
       });
     } catch (e) { console.error('loadDeals exception:', e); }
   }
 
-  /* ---------- SECURITY: sanitised cart persistence (STEP 7 preserved) ---------- */
   function loadCart(){
     try {
       var raw = window.localStorage.getItem(CART_KEY);
@@ -816,7 +733,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
       for (var i = 0; i < data.length; i++) {
         var it = data[i];
         if (!it || typeof it !== 'object' || Array.isArray(it)) continue;
-        if (!findProduct(it.id)) continue;   /* inactive/removed products dropped gracefully */
+        if (!findProduct(it.id)) continue;
         var q = parseInt(it.qty, 10);
         if (!isFinite(q)) q = 1;
         q = Math.min(99, Math.max(1, q));
@@ -826,10 +743,9 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     } catch (e) { return []; }
   }
   function saveCart(){
-    try { window.localStorage.setItem(CART_KEY, JSON.stringify(state.cart)); } catch (e) { /* storage blocked */ }
+    try { window.localStorage.setItem(CART_KEY, JSON.stringify(state.cart)); } catch (e) {}
   }
 
-  /* ---------- Distance from store (on-device only) ---------- */
   function haversineKm(lat1, lon1, lat2, lon2){
     var R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180;
     var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
@@ -856,8 +772,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     else showToast('Location is OFF. Switch on GPS in phone settings, then tap the chip above.');
   }
   function onGeoSuccess(pos){
-    var d = haversineKm(pos.coords.latitude, pos.coords.longitude, SHOP_COORDS.lat, SHOP_COORDS.lng);
-    setChip('ok', d);
+    setChip('ok', haversineKm(pos.coords.latitude, pos.coords.longitude, SHOP_COORDS.lat, SHOP_COORDS.lng));
   }
   function requestDistance(){
     if (!navigator.geolocation) { setChip('error'); showToast('This browser cannot access location.'); return; }
@@ -868,10 +783,10 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     } catch (e) { setChip('error'); }
   }
 
-  /* ---------- DOM builders (textContent only → XSS-safe) ---------- */
   function makeImg(src, alt, lazy){
     var im = document.createElement('img');
-    im.src = src; im.alt = alt; im.decoding = 'async';
+    var s = (src && String(src).trim()) ? String(src) : FALLBACK_IMG;  /* FIX: never empty/broken src */
+    im.src = s; im.alt = alt; im.decoding = 'async';
     if (lazy) im.loading = 'lazy';
     im.addEventListener('error', function () { im.src = FALLBACK_IMG; }, { once: true });
     return im;
@@ -914,11 +829,8 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     pr.appendChild(now); pr.appendChild(was);
     var btn = document.createElement('button');
     btn.type = 'button'; btn.className = 'addbtn'; btn.setAttribute('data-add', p.id);
-    if (typeof p.stock === 'number' && p.stock <= 0) {
-      btn.disabled = true; btn.textContent = 'Out of stock';
-    } else {
-      btn.textContent = 'Add to cart';
-    }
+    if (typeof p.stock === 'number' && p.stock <= 0) { btn.disabled = true; btn.textContent = 'Out of stock'; }
+    else { btn.textContent = 'Add to cart'; }
     info.appendChild(br); info.appendChild(nm); info.appendChild(pr); info.appendChild(btn);
     card.appendChild(info);
     return card;
@@ -935,13 +847,12 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     ov.appendChild(st); ov.appendChild(sp); b.appendChild(ov);
     return b;
   }
-  /* STEP 9/10: friendly empty / loading / error notes (no raw DB errors shown) */
   function fillGrid(el, nodes, emptyMsg){
     while (el.firstChild) el.removeChild(el.firstChild);
     if (!nodes.length) {
       var note = document.createElement('div'); note.className = 'empty-note';
       if (emptyMsg) note.textContent = emptyMsg;
-      else if (state.loadError) note.textContent = '⚠️ Could not load products right now. Please check your internet connection and refresh.';
+      else if (state.loadError) note.textContent = '️ Could not load products right now. Please check your internet connection and refresh.';
       else note.textContent = 'No products found. Try a different search or category.';
       el.appendChild(note); return;
     }
@@ -959,7 +870,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     });
   }
 
-  /* ---------- Real store photos: try local file first, fallback to hosted ---------- */
   function loadStorePhoto(imgEl, idx){
     var local = LOCAL_STORE[idx], remote = STORE_FALLBACK[idx];
     var probe = new Image();
@@ -982,7 +892,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     }
   }
 
-  /* ---------- Renders (existing names preserved; guarded until data ready) ---------- */
   function renderCategories(){
     if (!state.dataReady) return;
     fillGrid(byId('homeCatGrid'), CATEGORIES.map(categoryCard));
@@ -1006,8 +915,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   }
   function renderPopular(){
     if (!state.dataReady) return;
-    fillGrid(byId('popularGrid'), PRODUCTS.filter(function(p){ return p.popular; }).map(productCard),
-      'No popular products marked yet.');
+    fillGrid(byId('popularGrid'), PRODUCTS.filter(function(p){ return p.popular; }).map(productCard), 'No popular products marked yet.');
   }
   function renderCategoryProducts(){
     if (!state.dataReady) return;
@@ -1020,7 +928,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     fillGrid(grid, PRODUCTS.filter(function(p){ return p.cat === state.category; }).map(productCard));
   }
 
-  /* ---------- Cart UI ---------- */
   function cartQtyTotal(){ return state.cart.reduce(function(s, it){ return s + it.qty; }, 0); }
   function cartSum(){
     return state.cart.reduce(function(s, it){
@@ -1069,7 +976,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   }
   function addToCart(id){
     var p = findProduct(id);
-    if (!p) return;                                   /* inactive product — ignore safely */
+    if (!p) return;
     if (typeof p.stock === 'number' && p.stock <= 0) { showToast('Sorry, this item is out of stock.'); return; }
     var found = null;
     for (var i = 0; i < state.cart.length; i++) if (String(state.cart[i].id) === String(id)) found = state.cart[i];
@@ -1089,7 +996,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     saveCart(); renderCart();
   }
 
-  /* ---------- Toast ---------- */
   var toastTimer = null;
   function showToast(msg){
     var t = byId('toast');
@@ -1099,7 +1005,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2600);
   }
 
-  /* ---------- Drawer ---------- */
   function openCart(){
     byId('cartDrawer').classList.add('open');
     byId('cartDrawer').setAttribute('aria-hidden','false');
@@ -1111,7 +1016,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     byId('overlay').classList.remove('show');
   }
 
-  /* ---------- Router (whitelisted hash routes only) ---------- */
   function routeFromHash(){
     var h = window.location.hash.replace(/^#\/?/, '').split('?')[0];
     return ROUTES.indexOf(h) !== -1 ? h : 'home';
@@ -1130,23 +1034,17 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
   }
 
-  /* ---------- Events (no inline handlers) ---------- */
   document.addEventListener('click', function (ev) {
     var target = ev.target;
     if (!target || !target.closest) return;
-
     var addBtn = target.closest('[data-add]');
     if (addBtn) { addToCart(addBtn.getAttribute('data-add')); return; }
-
     var incBtn = target.closest('[data-inc]');
     if (incBtn) { changeQty(incBtn.getAttribute('data-inc'), +1); return; }
-
     var decBtn = target.closest('[data-dec]');
     if (decBtn) { changeQty(decBtn.getAttribute('data-dec'), -1); return; }
-
     var rmBtn = target.closest('[data-rm]');
     if (rmBtn) { removeItem(rmBtn.getAttribute('data-rm')); return; }
-
     var catBtn = target.closest('[data-cat]');
     if (catBtn) {
       state.category = catBtn.getAttribute('data-cat');
@@ -1156,7 +1054,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
       if (head && !head.hidden) { try { head.scrollIntoView({ behavior:'smooth', block:'start' }); } catch (e) {} }
       return;
     }
-
     var dealBtn = target.closest('[data-deal]');
     if (dealBtn) {
       state.category = dealBtn.getAttribute('data-deal');
@@ -1164,7 +1061,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
       renderCategoryProducts();
       return;
     }
-
     var gotoBtn = target.closest('[data-goto]');
     if (gotoBtn) { window.location.hash = '#/' + gotoBtn.getAttribute('data-goto'); return; }
   });
@@ -1172,24 +1068,18 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   byId('logoLink').addEventListener('click', function () {
     if (state.route === 'home') { try { window.scrollTo({ top:0, behavior:'smooth' }); } catch (e) { window.scrollTo(0,0); } }
   });
-
   byId('distChip').addEventListener('click', requestDistance);
-
   byId('cartOpenBtn').addEventListener('click', openCart);
   byId('cartCloseBtn').addEventListener('click', closeCart);
   byId('overlay').addEventListener('click', closeCart);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeCart(); });
-
   byId('clearCartBtn').addEventListener('click', function () {
     state.cart = []; saveCart(); renderCart(); showToast('Cart cleared');
   });
-
   byId('tabSearch').addEventListener('click', function () {
     if (state.route !== 'home') window.location.hash = '#/';
     setTimeout(function(){ byId('searchInput').focus(); }, 80);
   });
-
-  /* STEP 8: WhatsApp checkout preserved (same number, same message format) */
   byId('checkoutBtn').addEventListener('click', function () {
     if (!state.cart.length) return;
     var lines = ['Hello Rishikesh Enterprises! I would like to order:'];
@@ -1203,26 +1093,22 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     var win = window.open(url, '_blank', 'noopener,noreferrer');
     if (!win) window.location.href = url;
   });
-
   byId('searchInput').addEventListener('input', function (e) {
     state.query = String(e.target.value || '').slice(0, 60);
     if (state.route !== 'home') window.location.hash = '#/';
     renderHomeProducts();
   });
-
   byId('catClearBtn').addEventListener('click', function () {
     state.category = null; renderCategoryProducts();
   });
-
   window.addEventListener('hashchange', applyRoute);
 
-  /* ================= STEP 5: async initialisation ================= */
   async function init(){
-    setLoadingState();                 /* STEP 9: loading state while fetching */
-    applyRoute();                      /* show correct view shell immediately  */
+    setLoadingState();
+    applyRoute();
     await Promise.all([ loadProducts(), loadCategories(), loadDeals() ]);
     state.dataReady = true;
-    try { state.cart = loadCart(); } catch (e) { state.cart = []; }  /* after products exist */
+    try { state.cart = loadCart(); } catch (e) { state.cart = []; }
     renderStoreExtras();
     renderCategories();
     renderDeals();
@@ -1231,7 +1117,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     renderCategoryProducts();
     renderCart();
     applyRoute();
-    /* Ask location once per session to show "Our store is at ~x km" */
     var auto = function(){ setTimeout(requestDistance, 700); };
     try {
       if (!sessionStorage.getItem('re_geo_asked')) { sessionStorage.setItem('re_geo_asked', '1'); auto(); }

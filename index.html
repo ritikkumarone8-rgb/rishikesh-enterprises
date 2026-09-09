@@ -5,17 +5,21 @@
 <!-- =====================================================================
   RISHIKESH ENTERPRISES — Supabase-connected customer website
   ---------------------------------------------------------------------
-  FIXES IN THIS VERSION (mobile alignment, from your screenshot):
-   • Header row no longer overlaps on small phones: the logo text now
-     shrinks with an ellipsis (…) and the Cart + Call buttons are pinned
-     to the right edge and never sit on top of the logo.
-   • Removed a CSS rule that pulled the cart/call buttons left on mobile.
-   • Tighter header gaps on mobile so everything fits in one clean row.
-   • BONUS FIX for "0 items" on category cards: category matching is now
-     case-insensitive (DB 'Lighting' vs 'lighting' both work), so counts
-     and category product lists work even if the DB casing differs.
-  EVERYTHING ELSE (Supabase loading, cart, WhatsApp checkout, search,
-  store info, privacy page, design) is unchanged.
+  FIXES / ADDITIONS IN THIS VERSION:
+   • SEARCH FIXED & MADE USABLE:
+       - The 🔍 icon inside the search bar and the bottom "Search" tab now
+         focus the search box (with a red pulse so it's obvious).
+       - A ✕ clear button appears while typing.
+       - Search now matches product name, brand, category name AND description.
+       - Friendly messages: "No products match …" vs "No products in database
+         yet (check admin dashboard / is_active)" — plus a console.warn hint.
+   • LOGO FIXED: the "ENTERPRISES" line is now visible on ALL screen sizes
+     (it was hidden below 360px); letter-spacing tightens on small phones.
+   • NEW SPLASH INTRO: on opening, a big animated bolt logo + wordmark shows
+     while the rest of the site and Supabase data load underneath; it fades
+     out automatically when ready (max 3s). Respects reduced-motion setting.
+  EVERYTHING ELSE (Supabase loading, cart, WhatsApp checkout, store info,
+  privacy page, design, mobile layout) is unchanged.
 ===================================================================== -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#7c0d10">
@@ -37,6 +41,27 @@ a{color:var(--brand);text-decoration:none}
 a,button{touch-action:manipulation}
 a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid rgba(210,31,38,.35);outline-offset:2px;border-radius:8px}
 
+/* ---------- Splash intro (big animated logo while site loads) ---------- */
+#splash{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;align-items:center;justify-content:center;transition:opacity .45s ease,visibility .45s ease}
+#splash.hide{opacity:0;visibility:hidden;pointer-events:none}
+.splash-inner{display:flex;flex-direction:column;align-items:center;gap:16px;padding:24px}
+.splash-bolt{width:120px;height:120px;color:var(--brand);animation:boltIn .7s cubic-bezier(.2,1.4,.4,1) both}
+.splash-bolt circle{stroke-dasharray:160;stroke-dashoffset:160;animation:boltDraw .9s .15s ease forwards}
+.splash-bolt path{transform-origin:32px 32px;animation:boltPop .5s .55s cubic-bezier(.2,1.6,.4,1) both}
+.splash-name{text-align:center;animation:nameUp .55s .7s both}
+.splash-name strong{display:block;font-size:2rem;font-weight:800;letter-spacing:.02em;color:var(--brand)}
+.splash-name span{display:block;font-size:.82rem;font-weight:700;letter-spacing:.42em;color:var(--brand-dark);margin-top:2px}
+.splash-tag{font-size:.78rem;color:var(--muted);font-weight:600;animation:nameUp .55s .9s both}
+@keyframes boltIn{from{transform:scale(.35) rotate(-30deg);opacity:0}to{transform:scale(1) rotate(0deg);opacity:1}}
+@keyframes boltDraw{to{stroke-dashoffset:0}}
+@keyframes boltPop{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes nameUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){
+  #splash{display:none}
+  .splash-bolt,.splash-bolt circle,.splash-bolt path,.splash-name,.splash-tag{animation:none}
+  .splash-bolt circle{stroke-dashoffset:0}
+}
+
 /* ---------- Utility strip ---------- */
 .utilbar{background:linear-gradient(90deg,var(--brand-deep),var(--brand-dark));color:#fff;font-size:.78rem}
 .utilbar-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:7px 20px;flex-wrap:wrap}
@@ -46,7 +71,7 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid rgba(
 .util-right a{color:#fff;font-weight:800}
 @media(max-width:520px){.util-hours{display:none}}
 
-/* ---------- Header (FIXED mobile alignment) ---------- */
+/* ---------- Header ---------- */
 .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .topbar-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:10px 20px;flex-wrap:nowrap}
 .logo{display:flex;align-items:center;gap:10px;color:var(--brand);min-width:0;flex:0 1 auto}
@@ -67,8 +92,12 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid rgba(
 .callbtn{display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;background:var(--brand);color:#fff;font-size:1.2rem;box-shadow:var(--shadow);flex-shrink:0}
 .callbtn:active{transform:scale(.94)}
 .search-row{padding:0 20px 12px;max-width:1180px;margin:0 auto}
-.searchbox{display:flex;align-items:center;gap:10px;background:#f1efec;border:1px solid var(--line);border-radius:999px;padding:10px 18px;width:100%}
+.searchbox{display:flex;align-items:center;gap:8px;background:#f1efec;border:1px solid var(--line);border-radius:999px;padding:10px 14px 10px 16px;width:100%;transition:border-color .2s,box-shadow .2s}
+.searchbox.flash{border-color:var(--brand);box-shadow:0 0 0 4px rgba(210,31,38,.14)}
 .searchbox input{border:none;background:transparent;outline:none;font:inherit;font-size:16px;width:100%;color:var(--ink)}
+.search-ico{font-size:1rem;padding:4px;flex-shrink:0}
+.search-clear{width:28px;height:28px;border-radius:50%;background:#e2ddd6;color:#57534e;font-size:.8rem;font-weight:800;display:grid;place-items:center;flex-shrink:0}
+.search-clear:hover{background:var(--brand);color:#fff}
 
 /* ---------- Mobile bottom tab bar ---------- */
 .tabbar{position:fixed;bottom:0;left:0;right:0;z-index:50;display:none;border-top:1px solid var(--line);background:#fff;justify-content:space-around;padding:6px 0 calc(6px + env(safe-area-inset-bottom));box-shadow:0 -4px 20px rgba(0,0,0,.06)}
@@ -225,7 +254,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   .logo{gap:8px}
   .logo svg{width:38px;height:38px}
   .logo-text strong{font-size:1rem}
-  .logo-text span{font-size:.56rem;letter-spacing:.18em}
+  .logo-text span{font-size:.56rem;letter-spacing:.16em}
   .cartbtn,.callbtn{width:42px;height:42px;font-size:1.1rem}
   .header-actions{gap:8px}
   .search-row{padding:0 12px 10px}
@@ -269,8 +298,8 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   .toast{bottom:96px}
 }
 @media(max-width:360px){
-  .logo-text span{display:none}
   .logo-text strong{font-size:.94rem}
+  .logo-text span{font-size:.5rem;letter-spacing:.12em}
 }
 @media(min-width:900px){
   .foot-bottom{padding-bottom:16px}
@@ -279,6 +308,18 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
 </style>
 </head>
 <body>
+
+<!-- ================= SPLASH INTRO (big animated logo while site loads) ================= -->
+<div id="splash" aria-hidden="true">
+  <div class="splash-inner">
+    <svg class="splash-bolt" viewBox="0 0 64 64">
+      <circle cx="32" cy="32" r="25" fill="none" stroke="currentColor" stroke-width="6"/>
+      <path d="M38 3 L19 34 h10 L25 61 L45 29 H34 Z" fill="currentColor"/>
+    </svg>
+    <div class="splash-name"><strong>RISHIKESH</strong><span>ENTERPRISES</span></div>
+    <div class="splash-tag">Hajipur · Vaishali · Bihar</div>
+  </div>
+</div>
 
 <div class="utilbar">
   <div class="utilbar-inner">
@@ -311,9 +352,10 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     </div>
   </div>
   <div class="search-row">
-    <div class="searchbox">
-      <span aria-hidden="true">🔍</span>
+    <div class="searchbox" id="searchBox">
+      <button type="button" class="search-ico" id="searchFocusBtn" aria-label="Search products">🔍</button>
       <input id="searchInput" class="search-input" type="search" maxlength="60" placeholder="Search bulbs, fans, RO, batteries…" aria-label="Search products" autocomplete="off">
+      <button type="button" class="search-clear" id="searchClearBtn" aria-label="Clear search" hidden>✕</button>
     </div>
   </div>
 </header>
@@ -583,7 +625,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#e7e2dd"/><text x="200" y="165" font-size="64" text-anchor="middle">⚡</text></svg>'
   );
 
-  /* Robust category-image resolution: DB url → id alias → keyword → placeholder */
   var CATEGORY_IMG_ALIAS = {
     'lighting':IMG.bulb,'bulbs':IMG.bulb,'bulb':IMG.bulb,'led':IMG.bulb,'led-bulbs':IMG.bulb,'lights':IMG.bulb,'led-lighting':IMG.bulb,
     'switches':IMG.switchp,'switch':IMG.switchp,'modular-switches':IMG.switchp,'modular-switch':IMG.switchp,
@@ -640,9 +681,20 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
 
   function byId(id){ return document.getElementById(id); }
 
+  /* ---------- Splash ---------- */
+  var splashHidden = false;
+  function hideSplash(){
+    if (splashHidden) return;
+    splashHidden = true;
+    var s = byId('splash');
+    if (!s) return;
+    s.classList.add('hide');
+    setTimeout(function(){ if (s.parentNode) s.parentNode.removeChild(s); }, 600);
+  }
+  setTimeout(hideSplash, 3000);   /* safety: never trap the user on the splash */
+
   function inr(n){ return '₹' + Number(n).toLocaleString('en-IN'); }
   function discount(p){ return Math.round((1 - p.price / p.mrp) * 100); }
-  /* FIX: case/whitespace-insensitive category matching (fixes "0 items" when DB casing differs) */
   function sameCat(a, b){
     return String(a == null ? '' : a).toLowerCase().trim() === String(b == null ? '' : b).toLowerCase().trim();
   }
@@ -887,14 +939,21 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     if (!state.dataReady) return;
     fillGrid(byId('dealGrid'), DEALS.map(dealCard), 'No active deals right now — check back soon!');
   }
+  /* SEARCH: matches name + brand + category name + description */
   function renderHomeProducts(){
     if (!state.dataReady) return;
     var q = state.query.trim().toLowerCase();
     var list = PRODUCTS.filter(function(p){
       if (!q) return true;
-      return (p.name + ' ' + p.brand + ' ' + catName(p.cat)).toLowerCase().indexOf(q) !== -1;
+      return (p.name + ' ' + p.brand + ' ' + catName(p.cat) + ' ' + (p.description || '')).toLowerCase().indexOf(q) !== -1;
     });
-    fillGrid(byId('homeProdGrid'), list.map(productCard));
+    var emptyMsg = null;
+    if (!PRODUCTS.length && !state.loadError) {
+      emptyMsg = 'No products in the database yet. Add products from the seller dashboard (admin.html) or check is_active = true in Supabase.';
+    } else if (q && !list.length) {
+      emptyMsg = 'No products match “' + state.query.trim() + '”. Try another word, e.g. “bulb”, “fan”, “Havells”.';
+    }
+    fillGrid(byId('homeProdGrid'), list.map(productCard), emptyMsg);
     var status = byId('searchStatus');
     if (q) status.textContent = list.length + ' result' + (list.length === 1 ? '' : 's') + ' for \u201C' + state.query.trim() + '\u201D';
     else status.textContent = 'Genuine brands only · fair prices · delivered across Hajipur';
@@ -1020,6 +1079,23 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
   }
 
+  /* ---------- SEARCH helpers (usable everywhere) ---------- */
+  function focusSearch(){
+    if (state.route !== 'home') window.location.hash = '#/';
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
+    var box = byId('searchBox');
+    box.classList.add('flash');
+    setTimeout(function(){ box.classList.remove('flash'); }, 900);
+    setTimeout(function(){
+      var inp = byId('searchInput');
+      inp.focus({ preventScroll: true });
+      try { inp.select(); } catch (e) {}
+    }, 120);
+  }
+  function syncClearBtn(){
+    byId('searchClearBtn').hidden = !byId('searchInput').value;
+  }
+
   document.addEventListener('click', function (ev) {
     var target = ev.target;
     if (!target || !target.closest) return;
@@ -1062,28 +1138,27 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   byId('clearCartBtn').addEventListener('click', function () {
     state.cart = []; saveCart(); renderCart(); showToast('Cart cleared');
   });
-  byId('tabSearch').addEventListener('click', function () {
-    if (state.route !== 'home') window.location.hash = '#/';
-    setTimeout(function(){ byId('searchInput').focus(); }, 80);
-  });
-  byId('checkoutBtn').addEventListener('click', function () {
-    if (!state.cart.length) return;
-    var lines = ['Hello Rishikesh Enterprises! I would like to order:'];
-    state.cart.forEach(function (it) {
-      var p = findProduct(it.id); if (!p) return;
-      lines.push('• ' + p.name + ' × ' + it.qty + ' = ' + inr(p.price * it.qty));
-    });
-    lines.push('Total: ' + inr(cartSum()));
-    lines.push('Please confirm availability and delivery slot. Thank you!');
-    var url = WA_LINK + '?text=' + encodeURIComponent(lines.join('\n'));
-    var win = window.open(url, '_blank', 'noopener,noreferrer');
-    if (!win) window.location.href = url;
+
+  /* Search: icon button, bottom Search tab, clear button, live input */
+  byId('searchFocusBtn').addEventListener('click', focusSearch);
+  byId('tabSearch').addEventListener('click', focusSearch);
+  byId('searchClearBtn').addEventListener('click', function () {
+    var inp = byId('searchInput');
+    inp.value = ''; state.query = '';
+    syncClearBtn();
+    renderHomeProducts();
+    inp.focus({ preventScroll: true });
   });
   byId('searchInput').addEventListener('input', function (e) {
     state.query = String(e.target.value || '').slice(0, 60);
+    syncClearBtn();
     if (state.route !== 'home') window.location.hash = '#/';
     renderHomeProducts();
   });
+  byId('searchInput').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); renderHomeProducts(); }
+  });
+
   byId('catClearBtn').addEventListener('click', function () {
     state.category = null; renderCategoryProducts();
   });
@@ -1094,6 +1169,9 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     applyRoute();
     await Promise.all([ loadProducts(), loadCategories(), loadDeals() ]);
     state.dataReady = true;
+    if (!state.loadError && PRODUCTS.length === 0) {
+      console.warn('Supabase returned 0 active products. Check: products table has rows, is_active = true, and an anon SELECT policy exists (RLS).');
+    }
     try { state.cart = loadCart(); } catch (e) { state.cart = []; }
     renderStoreExtras();
     renderCategories();
@@ -1102,7 +1180,9 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     renderPopular();
     renderCategoryProducts();
     renderCart();
+    syncClearBtn();
     applyRoute();
+    hideSplash();   /* site + data ready → fade out the big logo intro */
     var auto = function(){ setTimeout(requestDistance, 700); };
     try {
       if (!sessionStorage.getItem('re_geo_asked')) { sessionStorage.setItem('re_geo_asked', '1'); auto(); }

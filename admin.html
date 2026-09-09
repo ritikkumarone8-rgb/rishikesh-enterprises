@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- =====================================================================
+  RISHIKESH ENTERPRISES — SELLER DASHBOARD (admin.html)
+  ---------------------------------------------------------------------
+  • Separate file from the customer website. The customer index.html is
+    NOT modified — the only connection is the shared Supabase database.
+  • Static file, works on GitHub Pages. No server / Node / PHP needed.
+  • Uses ONLY the public anon key. Security is enforced by Supabase
+    Row Level Security (RLS), not by this UI.
+
+  ================= CONFIG — PUT YOUR SUPABASE CREDENTIALS HERE ==========
+  In the <script> at the bottom find "CONFIG" and paste the SAME values
+  you used in index.html:
+      SUPABASE_URL      = your project URL
+      SUPABASE_ANON_KEY = your PUBLIC anon/publishable key
+  NEVER put the service_role / secret key in this file.
+  =======================================================================
+
+  ================= ONE-TIME SETUP IN SUPABASE ==========================
+  1) Create the seller login (Dashboard → Authentication → Users →
+     "Add user"): enter an email + password for the shopkeeper and
+     disable "auto-confirm" only if you want email verification;
+     for easiest setup keep auto-confirm ON so login works immediately.
+  2) Allow logged-in sellers to write (SQL editor, run once):
+       create policy "sellers insert products" on public.products for insert to authenticated with check (true);
+       create policy "sellers update products" on public.products for update to authenticated using (true) with check (true);
+       create policy "sellers delete products" on public.products for delete to authenticated using (true);
+       create policy "sellers insert deals" on public.deals for insert to authenticated with check (true);
+       create policy "sellers update deals" on public.deals for update to authenticated using (true) with check (true);
+       create policy "sellers insert categories" on public.categories for insert to authenticated with check (true);
+       create policy "sellers update categories" on public.categories for update to authenticated using (true) with check (true);
+     (skip any line if the policy already exists; keep your existing
+      anon-read policies for the customer website)
+
+  ================= TEST CHECKLIST (section 31) =========================
+  LOGIN
+   [ ] Seller can login            [ ] Wrong password is rejected
+   [ ] Logout works
+  PRODUCTS
+   [ ] Products load from Supabase [ ] Search works (name/brand/category)
+   [ ] Category filter works       [ ] Product image appears
+   [ ] Price / MRP / Stock appear correctly (₹1,299 format)
+  EDITING
+   [ ] Click product → edit screen [ ] Change selling price / MRP / stock
+   [ ] Save → "✓ Product updated"  [ ] Supabase row updates (no page reload)
+   [ ] Inline ✏️ price edit → ✓ saves immediately ("✓ Price updated")
+  ADDING
+   [ ] + Add Product → form        [ ] Validation messages beside fields
+   [ ] Add → appears in dashboard  [ ] Appears on customer website
+  HIDE / SHOW
+   [ ] Hide → is_active=false → disappears from customer website
+   [ ] Show → is_active=true  → returns to customer website
+  DEALS
+   [ ] Deals list loads  [ ] Add deal  [ ] Edit deal  [ ] Hide/show deal
+  MOST IMPORTANT TEST
+   [ ] Change ₹149 → ₹159 here, refresh customer website, it shows ₹159
+===================================================================== -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#d21f26">
+<title>Rishikesh Enterprises — Seller Dashboard</title>
+<style>
+:root{
+  --red:#d21f26; --red-dark:#a3151b; --ink:#16181d; --muted:#6b7280;
+  --bg:#f5f6f8; --card:#ffffff; --line:#e6e8ec; --ok:#16a34a; --warn:#b45309;
+  --radius:14px; --shadow:0 4px 18px rgba(20,20,30,.07);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45;-webkit-tap-highlight-color:transparent}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit}
+a,button{touch-action:manipulation}
+img{display:block;max-width:100%}
+
+/* ---------- Login ---------- */
+.loginwrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.logincard{background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:32px 26px;width:100%;max-width:400px;text-align:center}
+.logincard .bolt{width:56px;height:56px;margin:0 auto 10px;color:var(--red)}
+.logincard h1{font-size:1.3rem;letter-spacing:-.01em}
+.logincard p.sub{color:var(--muted);font-size:.85rem;margin:4px 0 20px}
+.logincard .field{text-align:left}
+.loginerr{color:#dc2626;font-size:.82rem;font-weight:700;margin-top:10px;min-height:18px}
+
+/* ---------- App header ---------- */
+.apphead{position:sticky;top:0;z-index:40;background:#fff;border-bottom:1px solid var(--line)}
+.apphead-inner{max-width:1080px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:10px}
+.brand{display:flex;align-items:center;gap:9px;color:var(--red);min-width:0}
+.brand svg{width:34px;height:34px;flex-shrink:0}
+.brand strong{font-size:1.02rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand small{display:block;font-size:.62rem;font-weight:700;color:var(--muted);letter-spacing:.12em}
+.tabs{display:flex;gap:6px;margin-left:auto}
+.tabs button{padding:9px 16px;border-radius:999px;font-weight:800;font-size:.84rem;color:var(--muted);min-height:40px}
+.tabs button.active{background:var(--red);color:#fff}
+.logoutbtn{padding:9px 14px;border-radius:999px;border:1.5px solid var(--line);font-weight:700;font-size:.8rem;color:var(--muted);min-height:40px}
+.logoutbtn:hover{border-color:var(--red);color:var(--red)}
+
+/* ---------- Layout ---------- */
+.wrap{max-width:1080px;margin:0 auto;padding:16px 16px 90px}
+.screen{display:none}
+.screen.active{display:block}
+
+/* ---------- Toolbar ---------- */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.searchbox{flex:1 1 220px;display:flex;align-items:center;gap:9px;background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:12px 18px}
+.searchbox input{border:none;outline:none;background:transparent;width:100%;font-size:16px;color:var(--ink)}
+.btn{background:var(--red);color:#fff;font-weight:800;font-size:.9rem;padding:13px 20px;border-radius:12px;min-height:48px;display:inline-flex;align-items:center;justify-content:center;gap:7px;transition:.15s}
+.btn:hover{background:var(--red-dark)}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.6;transform:none}
+.btn-ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line)}
+.btn-ghost:hover{border-color:var(--red);color:var(--red);background:#fff}
+.btn-small{padding:9px 14px;min-height:40px;font-size:.8rem;border-radius:10px}
+.btn-quiet{background:none;color:var(--muted);font-weight:700;font-size:.76rem;padding:8px 10px;border-radius:8px;min-height:36px}
+.btn-quiet.danger{color:#dc2626}
+.btn-quiet:hover{background:#f3f4f6}
+
+/* ---------- Stats ---------- */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.stat b{display:block;font-size:1.25rem;font-weight:800}
+.stat span{font-size:.72rem;font-weight:700;color:var(--muted)}
+.stat.low b{color:var(--warn)}
+@media(max-width:560px){.stats{grid-template-columns:repeat(2,1fr)}}
+
+/* ---------- Category chips ---------- */
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 12px;-webkit-overflow-scrolling:touch}
+.chip{flex-shrink:0;background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:9px 16px;font-weight:700;font-size:.8rem;color:var(--muted);min-height:38px}
+.chip.active{background:var(--ink);border-color:var(--ink);color:#fff}
+
+/* ---------- Product rows ---------- */
+.plist{display:flex;flex-direction:column;gap:10px}
+.prow{display:grid;grid-template-columns:1fr;gap:10px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow)}
+.cell{display:flex;align-items:center;gap:8px;min-width:0}
+.c-name .thumb{width:46px;height:46px;border-radius:10px;object-fit:cover;background:#f1f2f4;border:1px solid var(--line);flex-shrink:0}
+.nb{min-width:0}
+.pname{font-size:.95rem;font-weight:800;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.psub{font-size:.74rem;color:var(--muted);font-weight:600}
+.disc{background:#e8f7ee;color:var(--ok);font-size:.66rem;font-weight:800;border-radius:999px;padding:3px 8px;margin-left:6px;white-space:nowrap}
+.lbl{font-size:.72rem;font-weight:800;color:var(--muted);min-width:44px}
+.val{font-weight:800;font-size:.95rem;border-bottom:2px dashed #c9ced6;padding:2px 2px;min-height:32px;display:inline-flex;align-items:center;gap:6px}
+.val:hover{color:var(--red);border-color:var(--red)}
+.val.low{color:var(--warn)}
+.lowtag{font-size:.68rem;font-weight:800;color:var(--warn);white-space:nowrap}
+.status{font-size:.78rem;font-weight:800;border-radius:999px;padding:5px 11px;background:#e8f7ee;color:var(--ok)}
+.status.off{background:#f1f2f4;color:var(--muted)}
+.c-actions{display:flex;gap:8px;flex-wrap:wrap}
+.inline-wrap{display:inline-flex;align-items:center;gap:6px}
+.inline-wrap input{width:96px;min-height:40px;border:1.5px solid var(--red);border-radius:9px;padding:6px 10px;font-size:16px;font-weight:800;outline:none}
+.inline-wrap button{width:38px;height:38px;border-radius:9px;font-weight:800;font-size:1rem;display:grid;place-items:center}
+.inline-ok{background:var(--ok);color:#fff}
+.inline-cancel{background:#f1f2f4;color:var(--muted)}
+@media(min-width:900px){
+  .prow{grid-template-columns:minmax(220px,2.2fr) 110px 110px 120px 100px 170px;align-items:center;gap:12px}
+  .lbl{display:none}
+  .c-actions{justify-content:flex-end}
+  .pname{white-space:normal}
+}
+.empty-note{background:#fff;border:1px dashed var(--line);border-radius:var(--radius);padding:34px;text-align:center;color:var(--muted);font-size:.9rem}
+
+/* ---------- Forms ---------- */
+.panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;max-width:720px}
+.panel h2{font-size:1.15rem;margin-bottom:4px}
+.panel .hint{color:var(--muted);font-size:.8rem;margin-bottom:16px}
+.backbtn{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:.86rem;color:var(--muted);margin-bottom:12px;min-height:38px}
+.backbtn:hover{color:var(--red)}
+.quick{display:grid;gap:12px;grid-template-columns:1fr;margin-bottom:6px}
+@media(min-width:700px){.quick{grid-template-columns:repeat(3,1fr)}}
+.field{display:block;margin-bottom:14px}
+.flabel{display:block;font-size:.76rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;min-height:48px;border:1.5px solid #d7dbe0;border-radius:10px;padding:11px 14px;font-size:16px;color:var(--ink);background:#fff;outline:none}
+.field textarea{min-height:88px;resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(210,31,38,.12)}
+.field .err{display:block;color:#dc2626;font-size:.76rem;font-weight:700;margin-top:5px;min-height:14px}
+.check{display:flex;align-items:center;gap:10px;font-weight:700;font-size:.9rem;margin:6px 0 14px;min-height:32px}
+.check input{width:22px;height:22px;accent-color:var(--red)}
+.divider{border-top:1px dashed var(--line);margin:18px 0}
+.savebar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--line);padding:12px 0;margin-top:8px;display:flex;gap:10px;flex-wrap:wrap}
+.savebar .btn{flex:1 1 200px}
+.imgprev{width:96px;height:96px;border-radius:12px;object-fit:cover;border:1px solid var(--line);background:#f1f2f4;margin-bottom:10px}
+.dangerzone{margin-top:22px;padding-top:14px;border-top:1px dashed var(--line);display:flex;justify-content:flex-end}
+
+/* ---------- Toast ---------- */
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:13px 22px;border-radius:999px;font-size:.88rem;font-weight:800;opacity:0;pointer-events:none;transition:.3s;z-index:120;box-shadow:var(--shadow);max-width:90vw;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.bad{background:#dc2626}
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div class="loginwrap" id="viewLogin">
+  <form class="logincard" id="loginForm" novalidate>
+    <svg class="bolt" viewBox="0 0 64 64" aria-hidden="true">
+      <circle cx="32" cy="32" r="25" fill="none" stroke="currentColor" stroke-width="7"/>
+      <path d="M38 3 L19 34 h10 L25 61 L45 29 H34 Z" fill="currentColor"/>
+    </svg>
+    <h1>Rishikesh Enterprises</h1>
+    <p class="sub">Seller Login</p>
+    <label class="field"><span class="flabel">Email</span>
+      <input id="loginEmail" type="email" autocomplete="username" inputmode="email" required>
+    </label>
+    <label class="field"><span class="flabel">Password</span>
+      <input id="loginPassword" type="password" autocomplete="current-password" required>
+    </label>
+    <button type="submit" class="btn" id="loginBtn" style="width:100%">Login</button>
+    <div class="loginerr" id="loginErr" role="alert"></div>
+    <p class="sub" id="loginNote" style="margin:6px 0 0"></p>
+  </form>
+</div>
+
+<!-- ================= APP ================= -->
+<div id="viewApp" hidden>
+  <header class="apphead">
+    <div class="apphead-inner">
+      <div class="brand">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="32" cy="32" r="25" fill="none" stroke="currentColor" stroke-width="7"/>
+          <path d="M38 3 L19 34 h10 L25 61 L45 29 H34 Z" fill="currentColor"/>
+        </svg>
+        <div><strong>Rishikesh Enterprises</strong><small>SELLER DASHBOARD</small></div>
+      </div>
+      <div class="tabs">
+        <button type="button" id="tabProducts" class="active">Products</button>
+        <button type="button" id="tabDeals">Deals</button>
+      </div>
+      <button type="button" class="logoutbtn" id="logoutBtn">Logout</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+
+    <!-- ---------- PRODUCT LIST ---------- -->
+    <section class="screen active" id="screen-list">
+      <div class="stats" id="statsBox"></div>
+      <div class="toolbar">
+        <div class="searchbox">🔍<input id="searchInput" type="search" placeholder="Search products…" autocomplete="off" maxlength="60" aria-label="Search products"></div>
+        <button type="button" class="btn" id="addBtn">+ Add Product</button>
+      </div>
+      <div class="chips" id="chipsRow"></div>
+      <div class="plist" id="prodList"></div>
+    </section>
+
+    <!-- ---------- EDIT PRODUCT ---------- -->
+    <section class="screen" id="screen-edit">
+      <button type="button" class="backbtn" data-back="list">← Back</button>
+      <div class="panel">
+        <h2 id="editTitle">Edit Product</h2>
+        <p class="hint">Change price, MRP or stock and tap Save — the customer website updates instantly.</p>
+        <img class="imgprev" id="editImgPreview" alt="Current product image" hidden>
+        <div class="quick">
+          <label class="field"><span class="flabel">Selling Price *</span><input id="fPrice" inputmode="decimal"><span class="err" id="err-fPrice"></span></label>
+          <label class="field"><span class="flabel">MRP</span><input id="fMrp" inputmode="decimal"><span class="err" id="err-fMrp"></span></label>
+          <label class="field"><span class="flabel">Stock</span><input id="fStock" inputmode="numeric"><span class="err" id="err-fStock"></span></label>
+        </div>
+        <div class="divider"></div>
+        <label class="field"><span class="flabel">Product Name *</span><input id="fName" maxlength="120"><span class="err" id="err-fName"></span></label>
+        <label class="field"><span class="flabel">Brand</span><input id="fBrand" maxlength="60"></label>
+        <label class="field"><span class="flabel">Category *</span><select id="fCat"></select><span class="err" id="err-fCat"></span></label>
+        <label class="field"><span class="flabel">Description</span><textarea id="fDesc" maxlength="600"></textarea></label>
+        <label class="field"><span class="flabel">Image URL</span><input id="fImg" type="url" placeholder="https://…"><span class="err" id="err-fImg"></span></label>
+        <label class="check"><input type="checkbox" id="fPopular"> Popular product</label>
+        <label class="check"><input type="checkbox" id="fActive"> Active (visible on website)</label>
+        <div class="savebar">
+          <button type="button" class="btn" id="editSave">💾 Save Changes</button>
+          <button type="button" class="btn btn-ghost" id="editHideBtn">Hide Product</button>
+        </div>
+        <div class="dangerzone">
+          <button type="button" class="btn-quiet danger" id="editDeleteBtn">Delete permanently…</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- ADD PRODUCT ---------- -->
+    <section class="screen" id="screen-add">
+      <button type="button" class="backbtn" data-back="list">← Back</button>
+      <div class="panel">
+        <h2>Add New Product</h2>
+        <p class="hint">Only name, category and price are required. Stock starts at 0, product is Active by default.</p>
+        <label class="field"><span class="flabel">Product Name *</span><input id="aName" maxlength="120"><span class="err" id="err-aName"></span></label>
+        <label class="field"><span class="flabel">Brand</span><input id="aBrand" maxlength="60"></label>
+        <label class="field"><span class="flabel">Category *</span><select id="aCat"></select><span class="err" id="err-aCat"></span></label>
+        <div class="quick">
+          <label class="field"><span class="flabel">Selling Price *</span><input id="aPrice" inputmode="decimal"><span class="err" id="err-aPrice"></span></label>
+          <label class="field"><span class="flabel">MRP</span><input id="aMrp" inputmode="decimal"><span class="err" id="err-aMrp"></span></label>
+          <label class="field"><span class="flabel">Stock</span><input id="aStock" inputmode="numeric" value="0"><span class="err" id="err-aStock"></span></label>
+        </div>
+        <p class="hint" style="margin:-4px 0 12px">Leave MRP empty if there is no MRP — no discount will be shown on the website.</p>
+        <label class="field"><span class="flabel">Description</span><textarea id="aDesc" maxlength="600"></textarea></label>
+        <label class="field"><span class="flabel">Image URL</span><input id="aImg" type="url" placeholder="https://…"></label>
+        <label class="check"><input type="checkbox" id="aPopular"> Popular product</label>
+        <label class="check"><input type="checkbox" id="aActive" checked> Active (visible on website)</label>
+        <div class="savebar">
+          <button type="button" class="btn btn-ghost" data-back="list">Cancel</button>
+          <button type="button" class="btn" id="addSave">+ Add Product</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- DEALS LIST ---------- -->
+    <section class="screen" id="screen-deals">
+      <div class="toolbar">
+        <div class="searchbox" style="visibility:hidden">.</div>
+        <button type="button" class="btn" id="dealAddBtn">+ Add Deal</button>
+      </div>
+      <div class="plist" id="dealList"></div>
+    </section>
+
+    <!-- ---------- DEAL FORM ---------- -->
+    <section class="screen" id="screen-dealform">
+      <button type="button" class="backbtn" data-back="deals">← Back</button>
+      <div class="panel">
+        <h2 id="dfTitleHead">Add Deal</h2>
+        <p class="hint">Deals appear in the "Today's deals" section of the customer website.</p>
+        <label class="field"><span class="flabel">Title *</span><input id="dfTitle" maxlength="80"><span class="err" id="err-dfTitle"></span></label>
+        <label class="field"><span class="flabel">Description</span><input id="dfDesc" maxlength="140"></label>
+        <label class="field"><span class="flabel">Category</span><select id="dfCat"></select></label>
+        <label class="field"><span class="flabel">Image URL</span><input id="dfImg" type="url" placeholder="https://…"></label>
+        <div class="quick" style="grid-template-columns:1fr 1fr">
+          <label class="field"><span class="flabel">Start date</span><input id="dfStart" type="date"></label>
+          <label class="field"><span class="flabel">End date</span><input id="dfEnd" type="date"><span class="err" id="err-dfEnd"></span></label>
+        </div>
+        <label class="check"><input type="checkbox" id="dfActive" checked> Active (visible on website)</label>
+        <div class="savebar">
+          <button type="button" class="btn" id="dfSave">💾 Save Deal</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function () {
+  'use strict';
+
+  /* ================= CONFIG — PUT YOUR SUPABASE CREDENTIALS HERE =================
+     Use the SAME values as in index.html. Public anon key ONLY.                */
+  var SUPABASE_URL      = 'https://hlarqmfpxcmjrkcvtgqv.supabase.co';       // e.g. https://abcd1234.supabase.co
+  var SUPABASE_ANON_KEY = 'sb_publishable_AedviRis4ENUFq8K1fQIsQ_90Dp7A-C';  // public anon key (never service_role)
+  /* ============================================================================== */
+
+  var supabaseClient = (function () {
+    try {
+      if (window.supabase && window.supabase.createClient &&
+          SUPABASE_URL.indexOf('YOUR_SUPABASE_URL') === -1 &&
+          SUPABASE_ANON_KEY.indexOf('YOUR_SUPABASE_ANON_KEY') === -1) {
+        return window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
+      console.error('Supabase not configured in admin.html.');
+    } catch (e) { console.error('Supabase client creation failed:', e); }
+    return null;
+  })();
+
+  var state = {
+    products: [], categories: [], deals: [],
+    query: '', cat: 'all',
+    editingId: null, dealEditingId: null
+  };
+
+  function byId(id){ return document.getElementById(id); }
+  function el(tag, cls, txt){
+    var d = document.createElement(tag);
+    if (cls) d.className = cls;
+    if (txt != null) d.textContent = txt;
+    return d;
+  }
+  function inr(n){
+    n = Number(n);
+    if (!isFinite(n)) n = 0;
+    return '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  }
+  function disc(p){
+    if (!p || p.mrp == null || Number(p.mrp) <= 0) return 0;
+    var d = Math.round((1 - Number(p.price) / Number(p.mrp)) * 100);
+    return d > 0 ? d : 0;
+  }
+  function catName(id){
+    for (var i = 0; i < state.categories.length; i++) if (state.categories[i].id === id) return state.categories[i].name;
+    return '—';
+  }
+  function findProduct(id){
+    for (var i = 0; i < state.products.length; i++) if (String(state.products[i].id) === String(id)) return state.products[i];
+    return null;
+  }
+  function findDeal(id){
+    for (var i = 0; i < state.deals.length; i++) if (String(state.deals[i].id) === String(id)) return state.deals[i];
+    return null;
+  }
+  function normalizeProduct(p){
+    return {
+      id: String(p.id), name: p.name, brand: p.brand || '', cat: p.cat,
+      price: Number(p.price), mrp: (p.mrp == null ? null : Number(p.mrp)),
+      img: p.img || '', popular: Boolean(p.popular), stock: Number(p.stock || 0),
+      is_active: Boolean(p.is_active), description: p.description || ''
+    };
+  }
+  function parseNum(v){
+    return Number(String(v == null ? '' : v).replace(/[₹,\s]/g, ''));
+  }
+
+  /* ---------- Toast ---------- */
+  var toastTimer = null;
+  function toast(msg, ok){
+    var t = byId('toast');
+    t.textContent = msg;
+    t.classList.toggle('bad', ok === false);
+    t.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2400);
+  }
+
+  /* ---------- Screens ---------- */
+  function showScreen(name){
+    ['list','edit','add','deals','dealform'].forEach(function (s) {
+      byId('screen-' + s).classList.toggle('active', s === name);
+    });
+    byId('tabProducts').classList.toggle('active', name === 'list' || name === 'edit' || name === 'add');
+    byId('tabDeals').classList.toggle('active', name === 'deals' || name === 'dealform');
+    window.scrollTo(0, 0);
+  }
+
+  /* ---------- Auth ---------- */
+  function showLogin(){
+    byId('viewApp').hidden = true;
+    byId('viewLogin').style.display = 'flex';
+  }
+  function showApp(){
+    byId('viewLogin').style.display = 'none';
+    byId('viewApp').hidden = false;
+  }
+  async function enterApp(){
+    showApp();
+    byId('prodList').innerHTML = '<div class="empty-note">⏳ Loading products…</div>';
+    byId('dealList').innerHTML = '<div class="empty-note">⏳ Loading deals…</div>';
+    await loadAll();
+    renderStats(); renderChips(); renderList(); renderDeals();
+    showScreen('list');
+  }
+  byId('loginForm').addEventListener('submit', async function (ev) {
+    ev.preventDefault();
+    if (!supabaseClient) return;
+    var btn = byId('loginBtn');
+    byId('loginErr').textContent = '';
+    btn.disabled = true; btn.textContent = 'Signing in…';
+    try {
+      const { error } = await supabaseClient.auth.signInWithPassword({
+        email: byId('loginEmail').value.trim(),
+        password: byId('loginPassword').value
+      });
+      if (error) { console.error('Login error:', error); byId('loginErr').textContent = 'Email or password is incorrect.'; }
+      else { byId('loginPassword').value = ''; await enterApp(); }
+    } catch (e) { console.error('Login exception:', e); byId('loginErr').textContent = 'Could not sign in. Check your connection.'; }
+    btn.disabled = false; btn.textContent = 'Login';
+  });
+  byId('logoutBtn').addEventListener('click', async function () {
+    try { await supabaseClient.auth.signOut(); } catch (e) { console.error('Logout error:', e); }
+    state.products = []; state.categories = []; state.deals = [];
+    state.query = ''; state.cat = 'all';
+    byId('searchInput').value = '';
+    showLogin();
+    toast('Logged out');
+  });
+
+  /* ---------- Data loading ---------- */
+  async function loadAll(){
+    if (!supabaseClient) return;
+    await Promise.all([ loadProducts(), loadCategories(), loadDeals() ]);
+  }
+  async function loadProducts(){
+    try {
+      const { data, error } = await supabaseClient.from('products').select('*').order('created_at', { ascending: false });
+      if (error) { console.error('loadProducts error:', error); toast('Could not load products.', false); return; }
+      state.products = (data || []).map(normalizeProduct);
+    } catch (e) { console.error('loadProducts exception:', e); toast('Could not load products.', false); }
+  }
+  async function loadCategories(){
+    try {
+      const { data, error } = await supabaseClient.from('categories').select('*').eq('is_active', true).order('sort_order', { ascending: true });
+      if (error) { console.error('loadCategories error:', error); return; }
+      state.categories = data || [];
+    } catch (e) { console.error('loadCategories exception:', e); }
+  }
+  async function loadDeals(){
+    try {
+      const { data, error } = await supabaseClient.from('deals').select('*').order('created_at', { ascending: false });
+      if (error) { console.error('loadDeals error:', error); return; }
+      state.deals = data || [];
+    } catch (e) { console.error('loadDeals exception:', e); }
+  }
+
+  /* ---------- Stats / chips / list ---------- */
+  function renderStats(){
+    var box = byId('statsBox');
+    box.innerHTML = '';
+    var total = state.products.length;
+    var active = state.products.filter(function(p){ return p.is_active; }).length;
+    var hidden = total - active;
+    var low = state.products.filter(function(p){ return p.stock <= 5; }).length;
+    [[total,'Products',''],[active,'Active',''],[hidden,'Hidden',''],[low,'Low Stock','low']].forEach(function (s) {
+      var d = el('div', 'stat' + (s[2] ? ' ' + s[2] : ''));
+      d.appendChild(el('b', null, String(s[0])));
+      d.appendChild(el('span', null, s[1]));
+      box.appendChild(d);
+    });
+  }
+  function renderChips(){
+    var row = byId('chipsRow');
+    row.innerHTML = '';
+    var all = el('button', 'chip' + (state.cat === 'all' ? ' active' : ''), 'All');
+    all.type = 'button'; all.setAttribute('data-chip', 'all');
+    row.appendChild(all);
+    state.categories.forEach(function (c) {
+      var b = el('button', 'chip' + (state.cat === c.id ? ' active' : ''), c.name);
+      b.type = 'button'; b.setAttribute('data-chip', c.id);
+      row.appendChild(b);
+    });
+  }
+  function filteredProducts(){
+    var q = state.query.trim().toLowerCase();
+    return state.products.filter(function (p) {
+      if (state.cat !== 'all' && p.cat !== state.cat) return false;
+      if (!q) return true;
+      return (p.name + ' ' + p.brand + ' ' + catName(p.cat)).toLowerCase().indexOf(q) !== -1;
+    });
+  }
+  function inlineValueCell(p, field, label){
+    var c = el('div', 'cell c-' + field);
+    c.appendChild(el('span', 'lbl', label));
+    var text = (field === 'mrp' && p.mrp == null) ? '—' : inr(p[field]);
+    var v = el('button', 'val', text);
+    v.type = 'button'; v.title = 'Tap to change';
+    v.setAttribute('data-inline', field); v.setAttribute('data-id', p.id);
+    c.appendChild(v);
+    return c;
+  }
+  function renderList(){
+    var list = byId('prodList');
+    list.innerHTML = '';
+    var items = filteredProducts();
+    if (!state.products.length) { list.appendChild(el('div', 'empty-note', 'No products yet. Tap "+ Add Product" to create the first one.')); return; }
+    if (!items.length) { list.appendChild(el('div', 'empty-note', 'No products match your search.')); return; }
+    items.forEach(function (p) {
+      var row = el('div', 'prow');
+
+      var cName = el('div', 'cell c-name');
+      if (p.img) {
+        var im = document.createElement('img');
+        im.className = 'thumb'; im.alt = ''; im.loading = 'lazy'; im.src = p.img;
+        im.addEventListener('error', function(){ im.style.display = 'none'; }, { once: true });
+        cName.appendChild(im);
+      }
+      var nb = el('div', 'nb');
+      var line = el('span', null, null);
+      line.appendChild(el('strong', 'pname', p.name));
+      if (disc(p) > 0) line.appendChild(el('span', 'disc', disc(p) + '% OFF'));
+      nb.appendChild(line);
+      nb.appendChild(el('span', 'psub', (p.brand ? p.brand + ' · ' : '') + catName(p.cat)));
+      cName.appendChild(nb);
+      row.appendChild(cName);
+
+      row.appendChild(inlineValueCell(p, 'price', 'Price'));
+      row.appendChild(inlineValueCell(p, 'mrp', 'MRP'));
+
+      var cStock = el('div', 'cell c-stock');
+      cStock.appendChild(el('span', 'lbl', 'Stock'));
+      var sv = el('button', 'val' + (p.stock <= 5 ? ' low' : ''), String(p.stock));
+      sv.type = 'button'; sv.title = 'Tap to change';
+      sv.setAttribute('data-inline', 'stock'); sv.setAttribute('data-id', p.id);
+      cStock.appendChild(sv);
+      if (p.stock <= 5) cStock.appendChild(el('span', 'lowtag', '⚠ Low stock'));
+      row.appendChild(cStock);
+
+      var cSt = el('div', 'cell c-status');
+      cSt.appendChild(el('span', 'status' + (p.is_active ? '' : ' off'), p.is_active ? '🟢 Active' : ' Hidden'));
+      row.appendChild(cSt);
+
+      var ac = el('div', 'cell c-actions');
+      var eb = el('button', 'btn btn-small', 'Edit Product'); eb.type = 'button'; eb.setAttribute('data-edit', p.id);
+      var hb = el('button', 'btn btn-small btn-ghost', p.is_active ? 'Hide' : 'Show'); hb.type = 'button'; hb.setAttribute('data-toggle', p.id);
+      ac.appendChild(eb); ac.appendChild(hb);
+      row.appendChild(ac);
+
+      list.appendChild(row);
+    });
+  }
+
+  /* ---------- Supabase writes ---------- */
+  async function updateProduct(id, patch, successMsg){
+    if (!supabaseClient) { toast('Supabase is not configured.', false); return false; }
+    patch.updated_at = new Date().toISOString();
+    try {
+      const { error } = await supabaseClient.from('products').update(patch).eq('id', id);
+      if (error) { console.error('updateProduct error:', error); toast('Could not update product. Please try again.', false); return false; }
+      var p = findProduct(id);
+      if (p) Object.assign(p, normalizeProduct(Object.assign({}, p, patch)));
+      toast(successMsg || '✓ Product updated');
+      renderStats(); renderList();
+      return true;
+    } catch (e) { console.error('updateProduct exception:', e); toast('Could not update product. Please try again.', false); return false; }
+  }
+
+  /* ---------- Inline quick edit (price / mrp / stock) ---------- */
+  function startInline(btn){
+    var id = btn.getAttribute('data-id');
+    var field = btn.getAttribute('data-inline');
+    var p = findProduct(id); if (!p) return;
+    var wrap = el('span', 'inline-wrap');
+    var input = document.createElement('input');
+    input.inputMode = (field === 'stock') ? 'numeric' : 'decimal';
+    input.value = (field === 'mrp' && p.mrp == null) ? '' : String(p[field]);
+    input.setAttribute('aria-label', 'New ' + field);
+    var ok = el('button', 'inline-ok', '✓'); ok.type = 'button'; ok.setAttribute('data-inline-ok', '1');
+    var cancel = el('button', 'inline-cancel', '✕'); cancel.type = 'button'; cancel.setAttribute('data-inline-cancel', '1');
+    wrap.appendChild(input); wrap.appendChild(ok); wrap.appendChild(cancel);
+    wrap.dataset.id = id; wrap.dataset.field = field;
+    btn.style.display = 'none';
+    btn.parentNode.appendChild(wrap);
+    input.focus(); input.select();
+  }
+  async function commitInline(wrap){
+    var id = wrap.dataset.id, field = wrap.dataset.field;
+    var input = wrap.querySelector('input');
+    var p = findProduct(id); if (!p) return;
+    var raw = input.value.trim();
+    var val = parseNum(raw);
+    if (raw === '' || !isFinite(val)) { toast('Please enter a valid number.', false); input.focus(); return; }
+    if (field === 'stock') {
+      if (val < 0 || Math.floor(val) !== val) { toast('Stock must be 0 or a whole number.', false); input.focus(); return; }
+      await updateProduct(id, { stock: val }, '✓ Stock updated');
+      return;
+    }
+    if (val <= 0) { toast('Price and MRP must be more than 0.', false); input.focus(); return; }
+    if (field === 'price') {
+      if (p.mrp != null && p.mrp > 0 && val > p.mrp) { toast('Selling price cannot be more than MRP.', false); input.focus(); return; }
+      await updateProduct(id, { price: val }, '✓ Price updated');
+    } else {
+      if (val < p.price) { toast('MRP cannot be less than selling price.', false); input.focus(); return; }
+      await updateProduct(id, { mrp: val }, '✓ MRP updated');
+    }
+  }
+
+  /* ---------- Validation ---------- */
+  function setErr(id, msg){ byId(id).textContent = msg || ''; }
+  function clearErrs(prefix, ids){ ids.forEach(function (i) { setErr(prefix + i, ''); }); }
+  function validateProduct(v){
+    var e = {};
+    if (!v.name.trim()) e.name = 'Product name is required.';
+    if (!v.cat) e.cat = 'Please choose a category.';
+    if (v.priceRaw === '' || !isFinite(v.price) || v.price <= 0) e.price = 'Enter a valid selling price.';
+    if (v.mrpRaw !== '') {
+      if (!isFinite(v.mrp) || v.mrp <= 0) e.mrp = 'Enter a valid MRP or leave empty.';
+      else if (isFinite(v.price) && v.price > v.mrp) e.price = 'Selling price cannot be more than MRP.';
+    }
+    if (v.stockRaw === '' || !isFinite(v.stock) || v.stock < 0 || Math.floor(v.stock) !== v.stock) e.stock = 'Stock must be 0 or a whole number.';
+    return e;
+  }
+  function readProductValues(pfx){
+    var priceRaw = byId(pfx + 'Price').value.trim();
+    var mrpRaw   = byId(pfx + 'Mrp').value.trim();
+    var stockRaw = byId(pfx + 'Stock').value.trim();
+    return {
+      name: byId(pfx + 'Name').value, brand: byId(pfx + 'Brand').value.trim(),
+      cat: byId(pfx + 'Cat').value,
+      priceRaw: priceRaw, price: parseNum(priceRaw),
+      mrpRaw: mrpRaw, mrp: parseNum(mrpRaw),
+      stockRaw: stockRaw, stock: parseNum(stockRaw),
+      desc: byId(pfx + 'Desc').value.trim(), img: byId(pfx + 'Img').value.trim(),
+      popular: byId(pfx + 'Popular').checked, active: byId(pfx + 'Active').checked
+    };
+  }
+  function showProductErrors(pfx, e){
+    clearErrs('err-' + pfx, ['Name','Cat','Price','Mrp','Stock']);
+    setErr('err-' + pfx + 'Name', e.name); setErr('err-' + pfx + 'Cat', e.cat);
+    setErr('err-' + pfx + 'Price', e.price); setErr('err-' + pfx + 'Mrp', e.mrp);
+    setErr('err-' + pfx + 'Stock', e.stock);
+    return Object.keys(e).length === 0;
+  }
+  function fillCategorySelect(sel, selected, allowEmpty){
+    sel.innerHTML = '';
+    if (allowEmpty) {
+      var o = document.createElement('option'); o.value = ''; o.textContent = 'No category';
+      sel.appendChild(o);
+    } else {
+      var ph = document.createElement('option'); ph.value = ''; ph.textContent = 'Select category…';
+      sel.appendChild(ph);
+    }
+    state.categories.forEach(function (c) {
+      var op = document.createElement('option');
+      op.value = c.id; op.textContent = c.name;
+      if (selected && String(selected) === String(c.id)) op.selected = true;
+      sel.appendChild(op);
+    });
+  }
+
+  /* ---------- Edit screen ---------- */
+  function openEdit(id){
+    var p = findProduct(id); if (!p) return;
+    state.editingId = id;
+    byId('editTitle').textContent = 'Edit Product';
+    byId('fPrice').value = String(p.price);
+    byId('fMrp').value = (p.mrp == null ? '' : String(p.mrp));
+    byId('fStock').value = String(p.stock);
+    byId('fName').value = p.name;
+    byId('fBrand').value = p.brand;
+    fillCategorySelect(byId('fCat'), p.cat, false);
+    byId('fDesc').value = p.description;
+    byId('fImg').value = p.img;
+    byId('fPopular').checked = p.popular;
+    byId('fActive').checked = p.is_active;
+    var prev = byId('editImgPreview');
+    if (p.img) { prev.hidden = false; prev.src = p.img; prev.onerror = function(){ prev.hidden = true; }; }
+    else prev.hidden = true;
+    byId('editHideBtn').textContent = p.is_active ? 'Hide Product' : 'Show Product';
+    clearErrs('err-f', ['Name','Cat','Price','Mrp','Stock','Img']);
+    showScreen('edit');
+  }
+  byId('editSave').addEventListener('click', async function () {
+    var v = readProductValues('f');
+    var e = validateProduct(v);
+    if (!showProductErrors('f', e)) return;
+    var btn = byId('editSave'); btn.disabled = true; btn.textContent = 'Saving…';
+    var patch = {
+      name: v.name.trim(), brand: v.brand, cat: v.cat,
+      price: v.price,
+      mrp: (v.mrpRaw === '' ? v.price : v.mrp),   /* empty MRP = same as price → no discount shown */
+      stock: v.stock, description: v.desc, img: v.img,
+      popular: v.popular, is_active: v.active
+    };
+    var ok = await updateProduct(state.editingId, patch, '✓ Product updated');
+    btn.disabled = false; btn.textContent = '💾 Save Changes';
+    if (ok) showScreen('list');
+  });
+  byId('editHideBtn').addEventListener('click', async function () {
+    var p = findProduct(state.editingId); if (!p) return;
+    var nowActive = !p.is_active;
+    var ok = await updateProduct(p.id, { is_active: nowActive }, nowActive ? '✓ Product visible on website' : '✓ Product hidden from website');
+    if (ok) { byId('editHideBtn').textContent = nowActive ? 'Hide Product' : 'Show Product'; }
+  });
+  byId('editDeleteBtn').addEventListener('click', async function () {
+    var p = findProduct(state.editingId); if (!p) return;
+    if (!window.confirm('Are you sure you want to permanently delete this product?\n\n"' + p.name + '"\n\nTip: "Hide Product" is usually safer than deleting.')) return;
+    try {
+      const { error } = await supabaseClient.from('products').delete().eq('id', p.id);
+      if (error) { console.error('delete error:', error); toast('Could not delete product.', false); return; }
+      state.products = state.products.filter(function (x) { return x.id !== p.id; });
+      toast('✓ Product deleted');
+      renderStats(); renderList(); showScreen('list');
+    } catch (e) { console.error('delete exception:', e); toast('Could not delete product.', false); }
+  });
+
+  /* ---------- Add screen ---------- */
+  function openAdd(){
+    byId('aName').value = ''; byId('aBrand').value = '';
+    fillCategorySelect(byId('aCat'), null, false);
+    byId('aPrice').value = ''; byId('aMrp').value = ''; byId('aStock').value = '0';
+    byId('aDesc').value = ''; byId('aImg').value = '';
+    byId('aPopular').checked = false; byId('aActive').checked = true;
+    clearErrs('err-a', ['Name','Cat','Price','Mrp','Stock']);
+    showScreen('add');
+    setTimeout(function(){ byId('aName').focus(); }, 60);
+  }
+  byId('addSave').addEventListener('click', async function () {
+    var v = readProductValues('a');
+    var e = validateProduct(v);
+    if (!showProductErrors('a', e)) return;
+    var btn = byId('addSave'); btn.disabled = true; btn.textContent = 'Adding…';
+    var payload = {
+      name: v.name.trim(), brand: v.brand, cat: v.cat,
+      price: v.price,
+      mrp: (v.mrpRaw === '' ? v.price : v.mrp),
+      stock: v.stock, description: v.desc, img: v.img,
+      popular: v.popular, is_active: v.active
+    };
+    try {
+      var res = await supabaseClient.from('products').insert([payload]).select();
+      if (res.error && /23502|null value/i.test(res.error.message || '')) {
+        payload.id = 'p' + Date.now();           /* fallback if id column has no default */
+        res = await supabaseClient.from('products').insert([payload]).select();
+      }
+      if (res.error) { console.error('insert error:', res.error); toast('Could not add product. Please try again.', false); }
+      else {
+        var row = (res.data && res.data[0]) ? normalizeProduct(res.data[0]) : normalizeProduct(payload);
+        state.products.unshift(row);
+        toast('✓ Product added');
+        renderStats(); renderChips(); renderList();
+        showScreen('list');
+      }
+    } catch (e2) { console.error('insert exception:', e2); toast('Could not add product. Please try again.', false); }
+    btn.disabled = false; btn.textContent = '+ Add Product';
+  });
+
+  /* ---------- Deals ---------- */
+  function fmtDate(d){
+    if (!d) return '';
+    var dt = new Date(d);
+    if (isNaN(dt.getTime())) return String(d);
+    return dt.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+  function renderDeals(){
+    var list = byId('dealList');
+    list.innerHTML = '';
+    if (!state.deals.length) { list.appendChild(el('div', 'empty-note', 'No deals yet. Tap "+ Add Deal".')); return; }
+    state.deals.forEach(function (d) {
+      var row = el('div', 'prow');
+      var c1 = el('div', 'cell c-name');
+      var nb = el('div', 'nb');
+      nb.appendChild(el('strong', 'pname', d.title));
+      var range = [fmtDate(d.start_date), fmtDate(d.end_date)].filter(Boolean).join(' → ');
+      nb.appendChild(el('span', 'psub', catName(d.cat) + (range ? ' · ' + range : ' · no dates')));
+      c1.appendChild(nb);
+      row.appendChild(c1);
+      var cSt = el('div', 'cell c-status');
+      cSt.appendChild(el('span', 'status' + (d.is_active ? '' : ' off'), d.is_active ? '🟢 Active' : '⚪ Hidden'));
+      row.appendChild(cSt);
+      var ac = el('div', 'cell c-actions');
+      var eb = el('button', 'btn btn-small', 'Edit'); eb.type = 'button'; eb.setAttribute('data-dealedit', d.id);
+      var hb = el('button', 'btn btn-small btn-ghost', d.is_active ? 'Hide' : 'Show'); hb.type = 'button'; hb.setAttribute('data-dealtoggle', d.id);
+      ac.appendChild(eb); ac.appendChild(hb);
+      row.appendChild(ac);
+      list.appendChild(row);
+    });
+  }
+  function openDealForm(id){
+    state.dealEditingId = id;
+    var d = id ? findDeal(id) : null;
+    byId('dfTitleHead').textContent = d ? 'Edit Deal' : 'Add Deal';
+    byId('dfTitle').value = d ? d.title : '';
+    byId('dfDesc').value = d ? (d.description || '') : '';
+    fillCategorySelect(byId('dfCat'), d ? d.cat : null, true);
+    byId('dfImg').value = d ? (d.img || '') : '';
+    byId('dfStart').value = d && d.start_date ? String(d.start_date).slice(0, 10) : '';
+    byId('dfEnd').value = d && d.end_date ? String(d.end_date).slice(0, 10) : '';
+    byId('dfActive').checked = d ? Boolean(d.is_active) : true;
+    setErr('err-dfTitle', ''); setErr('err-dfEnd', '');
+    showScreen('dealform');
+  }
+  byId('dfSave').addEventListener('click', async function () {
+    var title = byId('dfTitle').value.trim();
+    var start = byId('dfStart').value || null;
+    var end = byId('dfEnd').value || null;
+    setErr('err-dfTitle', ''); setErr('err-dfEnd', '');
+    if (!title) { setErr('err-dfTitle', 'Title is required.'); return; }
+    if (start && end && new Date(end) < new Date(start)) { setErr('err-dfEnd', 'End date must be after start date.'); return; }
+    var payload = {
+      title: title,
+      description: byId('dfDesc').value.trim(),
+      cat: byId('dfCat').value || null,
+      img: byId('dfImg').value.trim(),
+      start_date: start, end_date: end,
+      is_active: byId('dfActive').checked
+    };
+    var btn = byId('dfSave'); btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      if (state.dealEditingId) {
+        const { error } = await supabaseClient.from('deals').update(payload).eq('id', state.dealEditingId);
+        if (error) { console.error('deal update error:', error); toast('Could not save deal.', false); }
+        else { var d = findDeal(state.dealEditingId); if (d) Object.assign(d, payload); toast('✓ Deal saved'); }
+      } else {
+        const { data, error } = await supabaseClient.from('deals').insert([payload]).select();
+        if (error) { console.error('deal insert error:', error); toast('Could not add deal.', false); }
+        else if (data && data[0]) { state.deals.unshift(data[0]); toast('✓ Deal added'); }
+      }
+      renderDeals(); showScreen('deals');
+    } catch (e) { console.error('deal save exception:', e); toast('Could not save deal.', false); }
+    btn.disabled = false; btn.textContent = '💾 Save Deal';
+  });
+  async function toggleDeal(id){
+    var d = findDeal(id); if (!d) return;
+    var nowActive = !d.is_active;
+    try {
+      const { error } = await supabaseClient.from('deals').update({ is_active: nowActive }).eq('id', id);
+      if (error) { console.error('deal toggle error:', error); toast('Could not update deal.', false); return; }
+      d.is_active = nowActive;
+      toast(nowActive ? '✓ Deal visible' : '✓ Deal hidden');
+      renderDeals();
+    } catch (e) { console.error('deal toggle exception:', e); toast('Could not update deal.', false); }
+  }
+
+  /* ---------- Global clicks ---------- */
+  document.addEventListener('click', function (ev) {
+    var t = ev.target;
+    if (!t || !t.closest) return;
+
+    var chip = t.closest('[data-chip]');
+    if (chip) { state.cat = chip.getAttribute('data-chip'); renderChips(); renderList(); return; }
+
+    var inlineBtn = t.closest('[data-inline]');
+    if (inlineBtn) { startInline(inlineBtn); return; }
+
+    var inlineOk = t.closest('[data-inline-ok]');
+    if (inlineOk) { commitInline(inlineOk.parentNode); return; }
+
+    var inlineCancel = t.closest('[data-inline-cancel]');
+    if (inlineCancel) { renderList(); return; }
+
+    var editBtn = t.closest('[data-edit]');
+    if (editBtn) { openEdit(editBtn.getAttribute('data-edit')); return; }
+
+    var togBtn = t.closest('[data-toggle]');
+    if (togBtn) {
+      var p = findProduct(togBtn.getAttribute('data-toggle'));
+      if (p) updateProduct(p.id, { is_active: !p.is_active }, !p.is_active ? '✓ Product visible on website' : '✓ Product hidden from website');
+      return;
+    }
+
+    var dealEdit = t.closest('[data-dealedit]');
+    if (dealEdit) { openDealForm(dealEdit.getAttribute('data-dealedit')); return; }
+
+    var dealTog = t.closest('[data-dealtoggle]');
+    if (dealTog) { toggleDeal(dealTog.getAttribute('data-dealtoggle')); return; }
+
+    var back = t.closest('[data-back]');
+    if (back) {
+      var dest = back.getAttribute('data-back');
+      if (dest === 'list') { renderStats(); renderList(); showScreen('list'); }
+      else { renderDeals(); showScreen('deals'); }
+      return;
+    }
+  });
+
+  byId('searchInput').addEventListener('input', function (e) {
+    state.query = String(e.target.value || '').slice(0, 60);
+    renderList();
+  });
+  byId('addBtn').addEventListener('click', openAdd);
+  byId('dealAddBtn').addEventListener('click', function(){ openDealForm(null); });
+  byId('tabProducts').addEventListener('click', function(){ renderStats(); renderList(); showScreen('list'); });
+  byId('tabDeals').addEventListener('click', function(){ renderDeals(); showScreen('deals'); });
+  byId('fImg').addEventListener('change', function () {
+    var prev = byId('editImgPreview');
+    var v = byId('fImg').value.trim();
+    if (v) { prev.hidden = false; prev.src = v; prev.onerror = function(){ prev.hidden = true; }; }
+    else prev.hidden = true;
+  });
+
+  /* ---------- Init ---------- */
+  async function init(){
+    if (!supabaseClient) {
+      byId('loginNote').textContent = 'Supabase is not configured in this file. Set SUPABASE_URL and SUPABASE_ANON_KEY first.';
+      byId('loginBtn').disabled = true;
+      return;
+    }
+    try {
+      const { data } = await supabaseClient.auth.getSession();
+      if (data && data.session) { await enterApp(); return; }
+    } catch (e) { console.error('getSession error:', e); }
+    showLogin();
+    supabaseClient.auth.onAuthStateChange(function (event, session) {
+      if (event === 'SIGNED_OUT') showLogin();
+    });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ init(); });
+  else init();
+})();
+</script>
+</body>
+</html>

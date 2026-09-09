@@ -3,18 +3,28 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rishikesh Enterprises — Electricals & Appliances, Hajipur</title>
-<meta name="description" content="Lights, wiring, fans, motors, switches & appliances — genuine brands, fair prices, delivered across Hajipur.">
+<title>Rishikesh Enterprises — Havells Dealer & Electricals, Yadav Chowk, Hajipur</title>
+<meta name="description" content="Lights, wiring, fans, motors, switches, RO, batteries, induction, coolers, trimmers & appliances — genuine brands, fair prices, delivered across Hajipur.">
 <!-- SECURITY: Referrer policy limits URL leakage to third parties -->
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<!-- SECURITY (deploy-time): enforce these headers on the server instead of CSP meta so previews/sandboxes are not blocked:
+<!-- SECURITY (deploy-time, set on server so sandboxes/previews never break):
      Content-Security-Policy: default-src 'self'; img-src https://image.qwenlm.ai data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'self'
      X-Content-Type-Options: nosniff -->
 <style>
 :root{
-  --brand:#1d4ed8; --brand-dark:#1e3a8a; --accent:#f59e0b; --accent-dark:#b45309;
-  --bg:#f6f8fb; --card:#ffffff; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0;
-  --ok:#16a34a; --danger:#dc2626; --radius:16px; --shadow:0 6px 24px rgba(15,23,42,.08);
+  --brand:#d21f26;            /* Havells-inspired red */
+  --brand-dark:#a3151b;
+  --brand-deep:#7c0d10;
+  --accent:#f59e0b;
+  --bg:#f7f6f4;
+  --card:#ffffff;
+  --ink:#141414;
+  --muted:#6b7280;
+  --line:#e7e2dd;
+  --ok:#16a34a;
+  --danger:#dc2626;
+  --radius:16px;
+  --shadow:0 6px 24px rgba(20,10,10,.08);
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -22,20 +32,31 @@ body{font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue
 img{display:block;max-width:100%}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 a{color:var(--brand);text-decoration:none}
-a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid rgba(29,78,216,.4);outline-offset:2px;border-radius:8px}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid rgba(210,31,38,.35);outline-offset:2px;border-radius:8px}
+
+/* ---------- Utility strip (distance + hours + call) ---------- */
+.utilbar{background:linear-gradient(90deg,var(--brand-deep),var(--brand-dark));color:#fff;font-size:.78rem}
+.utilbar-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:7px 20px;flex-wrap:wrap}
+.dist-chip{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.4);color:#fff;padding:4px 13px;border-radius:999px;font-weight:700;font-size:.74rem;transition:.2s;display:inline-flex;align-items:center;gap:6px}
+.dist-chip:hover{background:rgba(255,255,255,.26)}
+.util-right{margin-left:auto;display:flex;gap:16px;align-items:center;font-weight:600}
+.util-right a{color:#fff;font-weight:800}
+@media(max-width:520px){.util-hours{display:none}}
 
 /* ---------- Header ---------- */
-.topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-.topbar-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:12px 20px;flex-wrap:wrap}
-.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.05rem;color:var(--ink);letter-spacing:-.02em}
-.logo:hover .logo-mark{transform:rotate(-8deg) scale(1.06)}
-.logo-mark{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--brand),#3b82f6);display:grid;place-items:center;font-size:1.2rem;color:#fff;box-shadow:var(--shadow);transition:transform .25s ease}
-.logo-sub{display:block;font-size:.68rem;font-weight:600;color:var(--muted);letter-spacing:.04em}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.94);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);box-shadow:0 1px 0 rgba(0,0,0,.02)}
+.topbar-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:10px 20px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:11px;color:var(--brand)}
+.logo svg{flex-shrink:0;transition:transform .25s ease}
+.logo:hover svg{transform:rotate(-10deg) scale(1.05)}
+.logo-text{display:flex;flex-direction:column;line-height:1.05}
+.logo-text strong{font-size:1.18rem;font-weight:800;letter-spacing:.01em;color:var(--brand)}
+.logo-text span{font-size:.72rem;font-weight:600;letter-spacing:.34em;color:var(--brand-dark)}
 .mainnav{display:flex;gap:4px;margin-left:auto}
-.mainnav a{padding:8px 14px;border-radius:999px;font-weight:600;font-size:.9rem;color:var(--muted);transition:.2s}
-.mainnav a:hover{background:#eef2ff;color:var(--brand)}
+.mainnav a{padding:8px 15px;border-radius:999px;font-weight:700;font-size:.88rem;color:#3f3f46;transition:.2s}
+.mainnav a:hover{background:#fdeeee;color:var(--brand)}
 .mainnav a.active{background:var(--brand);color:#fff}
-.searchbox{display:flex;align-items:center;gap:8px;background:#eef2f7;border:1px solid var(--line);border-radius:999px;padding:8px 14px;min-width:220px}
+.searchbox{display:flex;align-items:center;gap:8px;background:#f1efec;border:1px solid var(--line);border-radius:999px;padding:8px 14px;min-width:220px}
 .searchbox input{border:none;background:transparent;outline:none;font:inherit;font-size:.9rem;width:100%;color:var(--ink)}
 .cartbtn{position:relative;display:flex;align-items:center;gap:8px;background:var(--ink);color:#fff;padding:9px 16px;border-radius:999px;font-weight:700;font-size:.88rem;transition:.2s}
 .cartbtn:hover{background:var(--brand)}
@@ -45,7 +66,7 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid rgba(
 .bottomnav{position:fixed;bottom:0;left:0;right:0;z-index:50;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px 6px calc(8px + env(safe-area-inset-bottom))}
 .bottomnav button,.bottomnav a{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.66rem;font-weight:700;color:var(--muted);padding:6px 10px;border-radius:12px;transition:.2s}
 .bottomnav .ico{font-size:1.15rem}
-.bottomnav button:hover,.bottomnav a:hover,.bottomnav a.active{color:var(--brand);background:#eef2ff}
+.bottomnav button:hover,.bottomnav a:hover,.bottomnav a.active{color:var(--brand);background:#fdeeee}
 .bottomnav .mini-badge{position:relative;display:inline-block}
 .bottomnav .mini-badge::after{content:attr(data-count);position:absolute;top:-4px;right:-8px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--accent);color:#3b2300;font-size:.6rem;font-weight:800;display:grid;place-items:center}
 .bottomnav .mini-badge[data-count="0"]::after{display:none}
@@ -57,28 +78,29 @@ main{max-width:1180px;margin:0 auto;padding:26px 20px 60px}
 .view{display:none;animation:fadeUp .35s ease}
 .view.active{display:block}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-.section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:34px 0 16px}
+.section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:38px 0 16px}
 .section-head:first-child{margin-top:0}
-.section-head h2{font-size:1.35rem;letter-spacing:-.02em}
+.eyebrow{display:block;font-size:.66rem;font-weight:800;letter-spacing:.16em;color:var(--brand);text-transform:uppercase;margin-bottom:4px}
+.section-head h2{font-size:1.4rem;letter-spacing:-.02em}
 .section-head p{color:var(--muted);font-size:.86rem;margin-top:2px}
 .linkbtn{font-weight:700;font-size:.86rem;color:var(--brand)}
 
 /* ---------- Category grid ---------- */
 .catgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
-.catcard{position:relative;border-radius:var(--radius);overflow:hidden;background:var(--card);box-shadow:var(--shadow);text-align:left;transition:transform .25s ease,box-shadow .25s ease;display:block;width:100%}
-.catcard:hover{transform:translateY(-4px);box-shadow:0 14px 34px rgba(15,23,42,.14)}
-.catcard img{width:100%;aspect-ratio:4/3;object-fit:cover;transition:transform .4s ease;background:#e2e8f0}
+.catcard{position:relative;border-radius:var(--radius);overflow:hidden;background:var(--card);box-shadow:var(--shadow);text-align:left;transition:transform .25s ease,box-shadow .25s ease;display:block;width:100%;border:1px solid var(--line)}
+.catcard:hover{transform:translateY(-4px);box-shadow:0 14px 34px rgba(20,10,10,.14)}
+.catcard img{width:100%;aspect-ratio:4/3;object-fit:cover;transition:transform .4s ease;background:#eee}
 .catcard:hover img{transform:scale(1.06)}
 .catcard .cat-label{padding:12px 14px}
-.catcard .cat-label strong{display:block;font-size:.92rem}
-.catcard .cat-label span{font-size:.75rem;color:var(--muted)}
+.catcard .cat-label strong{display:block;font-size:.9rem}
+.catcard .cat-label span{font-size:.74rem;color:var(--muted)}
 
 /* ---------- Product grid ---------- */
 .prodgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:16px}
-.pcard{background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;transition:transform .25s ease,box-shadow .25s ease;position:relative}
-.pcard:hover{transform:translateY(-4px);box-shadow:0 14px 34px rgba(15,23,42,.14)}
-.pcard .pimg{position:relative;background:#f1f5f9}
-.pcard .pimg img{width:100%;aspect-ratio:1/1;object-fit:cover;background:#f1f5f9}
+.pcard{background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;transition:transform .25s ease,box-shadow .25s ease;position:relative;border:1px solid var(--line)}
+.pcard:hover{transform:translateY(-4px);box-shadow:0 14px 34px rgba(20,10,10,.14)}
+.pcard .pimg{position:relative;background:#f4f2f0}
+.pcard .pimg img{width:100%;aspect-ratio:1/1;object-fit:cover;background:#f4f2f0}
 .pbadge{position:absolute;top:10px;left:10px;background:var(--ok);color:#fff;font-size:.68rem;font-weight:800;padding:4px 9px;border-radius:999px;letter-spacing:.02em}
 .pbadge.hot{background:var(--danger)}
 .pbadge.pop{left:auto;right:10px;background:var(--brand)}
@@ -86,7 +108,7 @@ main{max-width:1180px;margin:0 auto;padding:26px 20px 60px}
 .pbrand{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .pname{font-size:.92rem;font-weight:700;line-height:1.35}
 .pprice{margin-top:auto;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-.pprice .now{font-size:1.05rem;font-weight:800}
+.pprice .now{font-size:1.05rem;font-weight:800;color:var(--brand-dark)}
 .pprice .was{font-size:.8rem;color:var(--muted);text-decoration:line-through}
 .addbtn{margin-top:8px;background:var(--brand);color:#fff;font-weight:700;font-size:.85rem;padding:10px;border-radius:10px;transition:.2s}
 .addbtn:hover{background:var(--brand-dark)}
@@ -95,62 +117,89 @@ main{max-width:1180px;margin:0 auto;padding:26px 20px 60px}
 
 /* ---------- Deals ---------- */
 .dealgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
-.dealcard{position:relative;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);text-align:left;width:100%;transition:transform .25s ease}
+.dealcard{position:relative;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);text-align:left;width:100%;transition:transform .25s ease;border:1px solid var(--line)}
 .dealcard:hover{transform:translateY(-4px)}
-.dealcard img{width:100%;aspect-ratio:16/9;object-fit:cover;background:#e2e8f0}
-.dealcard .deal-overlay{position:absolute;left:0;right:0;bottom:0;padding:16px;background:linear-gradient(transparent,rgba(2,6,23,.85));color:#fff}
+.dealcard img{width:100%;aspect-ratio:16/9;object-fit:cover;background:#eee}
+.dealcard .deal-overlay{position:absolute;left:0;right:0;bottom:0;padding:16px;background:linear-gradient(transparent,rgba(20,5,5,.88));color:#fff}
 .dealcard .deal-overlay strong{display:block;font-size:1.02rem}
 .dealcard .deal-overlay span{font-size:.8rem;opacity:.9}
 .deal-tag{position:absolute;top:12px;left:12px;background:var(--accent);color:#3b2300;font-weight:800;font-size:.7rem;padding:5px 10px;border-radius:999px}
 
+/* ---------- Store banner (bottom of home) ---------- */
+.storebanner{margin-top:44px;border-radius:20px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--line);background:#fff}
+.sb-media{position:relative;display:block;width:100%;text-align:left}
+.sb-media img{width:100%;height:380px;object-fit:cover}
+.sb-overlay{position:absolute;inset:auto 0 0 0;padding:26px;background:linear-gradient(transparent,rgba(20,5,5,.9));color:#fff}
+.sb-overlay .eyebrow{color:#ffd7d8}
+.sb-overlay h2{font-size:1.6rem;letter-spacing:-.02em}
+.sb-overlay p{font-size:.88rem;opacity:.92;margin-top:4px;max-width:560px}
+.sb-actions{display:flex;flex-wrap:wrap;gap:10px;padding:16px 20px}
+.btn-solid{background:var(--brand);color:#fff;font-weight:800;font-size:.86rem;padding:11px 20px;border-radius:999px;transition:.2s;display:inline-flex;align-items:center;gap:7px}
+.btn-solid:hover{background:var(--brand-dark)}
+.btn-ghost{border:1.5px solid var(--line);color:var(--ink);font-weight:700;font-size:.86rem;padding:11px 20px;border-radius:999px;transition:.2s;display:inline-flex;align-items:center;gap:7px;background:#fff}
+.btn-ghost:hover{border-color:var(--brand);color:var(--brand)}
+
+/* ---------- Store page ---------- */
+.storegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.storephoto{background:#fff;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--line)}
+.storephoto img{width:100%;aspect-ratio:4/3;object-fit:cover}
+.storephoto figcaption{padding:12px 14px;font-size:.82rem;font-weight:700;color:#3f3f46;display:flex;align-items:center;gap:8px}
+.storeinfo{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:20px}
+.infocard{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
+.infocard h3{font-size:.95rem;margin-bottom:8px;color:var(--brand-dark)}
+.infocard p{font-size:.86rem;color:#3f3f46;margin-bottom:6px}
+.storecta{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.chips span{background:#fdeeee;border:1px solid #f5c9ca;color:var(--brand-dark);border-radius:999px;padding:6px 12px;font-size:.74rem;font-weight:700}
+
 /* ---------- Privacy ---------- */
-.doc{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:34px;max-width:860px}
+.doc{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);padding:34px;max-width:860px;border:1px solid var(--line)}
 .doc h1{font-size:1.6rem;letter-spacing:-.02em;margin-bottom:6px}
 .doc .updated{color:var(--muted);font-size:.82rem;margin-bottom:22px}
 .doc h2{font-size:1.05rem;margin:24px 0 8px;color:var(--brand-dark)}
-.doc p,.doc li{font-size:.9rem;color:#334155;margin-bottom:8px}
+.doc p,.doc li{font-size:.9rem;color:#3f3f46;margin-bottom:8px}
 .doc ul{padding-left:20px}
 
 /* ---------- Footer ---------- */
-footer{background:#0b1220;color:#cbd5e1;margin-top:40px}
+footer{background:#17090a;color:#d6c9c9;margin-top:46px}
 .foot-inner{max-width:1180px;margin:0 auto;padding:44px 20px 30px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:30px}
 .foot-inner h3{color:#fff;font-size:.95rem;margin-bottom:12px}
 .foot-inner p,.foot-inner li{font-size:.85rem;margin-bottom:8px}
 .foot-inner ul{list-style:none}
-.foot-inner a{color:#93c5fd;font-weight:600;font-size:.85rem}
+.foot-inner a{color:#f3b0b2;font-weight:600;font-size:.85rem}
 .foot-inner a:hover{text-decoration:underline}
 .foot-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
 .foot-actions a{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:999px;font-size:.82rem;font-weight:700}
-.btn-call{background:#fff;color:#0b1220 !important}
+.btn-call{background:#fff;color:#17090a !important}
 .btn-wa{background:#22c55e;color:#052e16 !important}
-.btn-dir{background:#334155;color:#fff !important}
+.btn-dir{background:#3f2a2b;color:#fff !important}
 .paychips{display:flex;flex-wrap:wrap;gap:8px}
-.paychips span{background:#1e293b;border:1px solid #334155;border-radius:8px;padding:5px 10px;font-size:.72rem;font-weight:600}
-.foot-bottom{border-top:1px solid #1e293b;padding:16px 20px;text-align:center;font-size:.78rem;color:#94a3b8}
-.foot-bottom a{color:#93c5fd}
+.paychips span{background:#241213;border:1px solid #3f2a2b;border-radius:8px;padding:5px 10px;font-size:.72rem;font-weight:600}
+.foot-bottom{border-top:1px solid #2b1718;padding:16px 20px;text-align:center;font-size:.78rem;color:#b3a0a0}
+.foot-bottom a{color:#f3b0b2}
 
 /* ---------- Cart drawer ---------- */
-.overlay{position:fixed;inset:0;background:rgba(2,6,23,.5);opacity:0;pointer-events:none;transition:opacity .3s;z-index:90}
+.overlay{position:fixed;inset:0;background:rgba(20,5,5,.5);opacity:0;pointer-events:none;transition:opacity .3s;z-index:90}
 .overlay.show{opacity:1;pointer-events:auto}
-.drawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,100%);background:#fff;z-index:100;transform:translateX(102%);transition:transform .35s cubic-bezier(.22,.9,.3,1);display:flex;flex-direction:column;box-shadow:-12px 0 40px rgba(2,6,23,.2)}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,100%);background:#fff;z-index:100;transform:translateX(102%);transition:transform .35s cubic-bezier(.22,.9,.3,1);display:flex;flex-direction:column;box-shadow:-12px 0 40px rgba(20,5,5,.25)}
 .drawer.open{transform:none}
 .drawer-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line)}
 .drawer-head h2{font-size:1.1rem}
-.closebtn{width:36px;height:36px;border-radius:10px;background:#f1f5f9;font-size:1rem;font-weight:700;transition:.2s}
-.closebtn:hover{background:#e2e8f0}
+.closebtn{width:36px;height:36px;border-radius:10px;background:#f4f2f0;font-size:1rem;font-weight:700;transition:.2s}
+.closebtn:hover{background:#e7e2dd}
 .drawer-body{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px}
 .citem{display:flex;gap:12px;border:1px solid var(--line);border-radius:14px;padding:10px;align-items:center}
-.citem img{width:64px;height:64px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#f1f5f9}
+.citem img{width:64px;height:64px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#f4f2f0}
 .citem .cinfo{flex:1;min-width:0}
 .citem .cname{font-size:.85rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .citem .cprice{font-size:.8rem;color:var(--muted);margin-top:2px}
 .qtyrow{display:flex;align-items:center;gap:10px;margin-top:8px}
-.qtyrow button{width:26px;height:26px;border-radius:8px;background:#eef2ff;color:var(--brand);font-weight:800;font-size:.95rem;transition:.15s}
+.qtyrow button{width:26px;height:26px;border-radius:8px;background:#fdeeee;color:var(--brand);font-weight:800;font-size:.95rem;transition:.15s}
 .qtyrow button:hover{background:var(--brand);color:#fff}
 .qtyrow .q{font-weight:800;font-size:.88rem;min-width:18px;text-align:center}
 .rmbtn{color:var(--danger);font-size:.72rem;font-weight:700;margin-left:auto}
 .rmbtn:hover{text-decoration:underline}
-.drawer-foot{border-top:1px solid var(--line);padding:18px 20px;display:flex;flex-direction:column;gap:12px;background:#f8fafc}
+.drawer-foot{border-top:1px solid var(--line);padding:18px 20px;display:flex;flex-direction:column;gap:12px;background:#faf8f6}
 .totalrow{display:flex;justify-content:space-between;font-weight:800;font-size:1rem}
 .totalrow span:first-child{color:var(--muted);font-weight:600}
 .wabtn{background:#22c55e;color:#052e16;font-weight:800;padding:13px;border-radius:12px;font-size:.92rem;transition:.2s}
@@ -166,47 +215,78 @@ footer{background:#0b1220;color:#cbd5e1;margin-top:40px}
 </head>
 <body>
 
+<!-- ================= UTILITY STRIP : distance from store ================= -->
+<div class="utilbar">
+  <div class="utilbar-inner">
+    <button type="button" class="dist-chip" id="distChip" aria-live="polite">📍 Show distance from our store</button>
+    <div class="util-right">
+      <span class="util-hours">🕐 Open daily · 9:00 AM – 9:00 PM</span>
+      <a href="tel:+919199156794">📞 +91 91991 56794</a>
+    </div>
+  </div>
+</div>
+
 <!-- ================= HEADER ================= -->
 <header class="topbar">
   <div class="topbar-inner">
-    <!-- Logo is a real link to home (#/) -->
+    <!-- Logo (recreated from the shop's red bolt-in-circle mark) — clickable, goes home -->
     <a href="#/" class="logo" id="logoLink" aria-label="Rishikesh Enterprises — go to home page">
-      <span class="logo-mark" aria-hidden="true">⚡</span>
-      <span>Rishikesh Enterprises<span class="logo-sub">HAJIPUR · VAISHALI · BIHAR</span></span>
+      <svg viewBox="0 0 64 64" width="46" height="46" aria-hidden="true">
+        <circle cx="32" cy="32" r="25" fill="none" stroke="currentColor" stroke-width="7"/>
+        <path d="M38 3 L19 34 h10 L25 61 L45 29 H34 Z" fill="currentColor"/>
+      </svg>
+      <span class="logo-text"><strong>RISHIKESH</strong><span>ENTERPRISES</span></span>
     </a>
     <nav class="mainnav" aria-label="Primary">
       <a href="#/" data-route="home">Home</a>
       <a href="#/categories" data-route="categories">Categories</a>
       <a href="#/popular" data-route="popular">Popular</a>
-      <a href="#/offers" data-route="offers">Offers</a>
+      <a href="#/store" data-route="store">Our Store</a>
     </nav>
     <div class="searchbox">
       <span aria-hidden="true">🔍</span>
-      <input id="searchInput" type="search" maxlength="60" placeholder="Search bulbs, fans, wires…" aria-label="Search products" autocomplete="off">
+      <input id="searchInput" type="search" maxlength="60" placeholder="Search bulbs, fans, RO, batteries…" aria-label="Search products" autocomplete="off">
     </div>
     <button type="button" class="cartbtn" id="cartOpenBtn" aria-label="Open cart">🛒 Cart<span class="cart-badge" id="cartCount">0</span></button>
   </div>
 </header>
 
 <main>
-  <!-- ================= HOME : category grid first, then all products ================= -->
+  <!-- ================= HOME : category grid → all products → our store ================= -->
   <section class="view" id="view-home" aria-label="Home">
     <div class="section-head">
-      <div><h2>Shop by category</h2><p>Tap a category to see everything in it</p></div>
+      <div><span class="eyebrow">Shop</span><h2>Shop by category</h2><p>Tap a category to see everything in it</p></div>
       <button type="button" class="linkbtn" data-goto="categories">View all →</button>
     </div>
     <div class="catgrid" id="homeCatGrid"></div>
 
     <div class="section-head">
-      <div><h2>All products</h2><p id="searchStatus">Genuine brands only · fair prices · delivered across Hajipur</p></div>
+      <div><span class="eyebrow">Catalogue</span><h2>All products</h2><p id="searchStatus">Genuine brands only · fair prices · delivered across Hajipur</p></div>
     </div>
     <div class="prodgrid" id="homeProdGrid"></div>
+
+    <!-- Store picture at the bottom, linked with the "Our Store" button on top -->
+    <div class="storebanner">
+      <button type="button" class="sb-media" data-goto="store" aria-label="View our store page">
+        <!-- NOTE: replace src with your real shop photo, e.g. images/store-front.jpg -->
+        <img id="homeStoreImg" alt="Rishikesh Enterprises storefront at Yadav Chowk, Hajipur" loading="lazy" decoding="async">
+        <div class="sb-overlay">
+          <span class="eyebrow">Our Store</span>
+          <h2>Visit us at Yadav Chowk</h2>
+          <p>Near Rambalak Chowk, Naya Tola Main Road, Hajipur — walk in for demos, warranty help and honest advice.</p>
+        </div>
+      </button>
+      <div class="sb-actions">
+        <button type="button" class="btn-solid" data-goto="store">🏪 Explore Our Store →</button>
+        <a class="btn-ghost" id="bannerDirLink" href="https://maps.app.goo.gl/T5ayk9QJFQ7WQD6W9?g_st=ac" target="_blank" rel="noopener noreferrer">📍 Get Directions</a>
+      </div>
+    </div>
   </section>
 
   <!-- ================= CATEGORIES ================= -->
   <section class="view" id="view-categories" aria-label="Categories">
     <div class="section-head">
-      <div><h2>Categories</h2><p>Everything we stock, organised</p></div>
+      <div><span class="eyebrow">Browse</span><h2>Categories</h2><p>Everything we stock, organised</p></div>
     </div>
     <div class="catgrid" id="catGrid"></div>
     <div class="section-head" id="catResultHead" hidden>
@@ -216,27 +296,76 @@ footer{background:#0b1220;color:#cbd5e1;margin-top:40px}
     <div class="prodgrid" id="catProdGrid"></div>
   </section>
 
-  <!-- ================= POPULAR ================= -->
-  <section class="view" id="view-popular" aria-label="Popular products">
+  <!-- ================= POPULAR + DEALS ================= -->
+  <section class="view" id="view-popular" aria-label="Popular products and deals">
     <div class="section-head">
-      <div><h2>Most popular</h2><p>Loved by customers across Hajipur</p></div>
+      <div><span class="eyebrow">Offers</span><h2>🔥 Today's deals</h2><p>Fresh offers, updated every morning</p></div>
+    </div>
+    <div class="dealgrid" id="dealGrid"></div>
+    <div class="section-head">
+      <div><span class="eyebrow">Bestsellers</span><h2>Most popular</h2><p>Loved by customers across Hajipur</p></div>
     </div>
     <div class="prodgrid" id="popularGrid"></div>
   </section>
 
-  <!-- ================= OFFERS ================= -->
-  <section class="view" id="view-offers" aria-label="Today's offers">
+  <!-- ================= OUR STORE ================= -->
+  <section class="view" id="view-store" aria-label="Our store">
     <div class="section-head">
-      <div><h2>🔥 Today's deals</h2><p>Fresh offers, updated every morning</p></div>
+      <div><span class="eyebrow">Our Store</span><h2>Rishikesh Enterprises, Hajipur</h2><p>Authorised Havells dealer — electronics & electricals showroom</p></div>
     </div>
-    <div class="dealgrid" id="dealGrid"></div>
+    <div class="storegrid">
+      <figure class="storephoto">
+        <!-- NOTE: replace with your real photo, e.g. images/store-inside.jpg -->
+        <img class="store-img" data-store="0" alt="Inside the Rishikesh Enterprises shop — shelves of fans, bulbs, irons and switch displays" loading="lazy" decoding="async">
+        <figcaption>🏬 Inside the shop — fans, lighting & switch galleries</figcaption>
+      </figure>
+      <figure class="storephoto">
+        <!-- NOTE: replace with your real photo, e.g. images/store-front.jpg -->
+        <img class="store-img" data-store="1" alt="Rishikesh Enterprises storefront with festive lights at evening" loading="lazy" decoding="async">
+        <figcaption>🎇 Our storefront at Naya Tola Main Road</figcaption>
+      </figure>
+      <figure class="storephoto">
+        <!-- NOTE: replace with your real photo, e.g. images/store-lighting-wall.jpg -->
+        <img class="store-img" data-store="2" alt="LED downlight and panel display board in the shop" loading="lazy" decoding="async">
+        <figcaption>💡 Lighting display wall — so many ways to brighten your home</figcaption>
+      </figure>
+    </div>
+
+    <div class="storeinfo">
+      <div class="infocard">
+        <h3>📍 Address</h3>
+        <p>East of, Naya Tola Main Road,<br>Near Rambalak Chowk, Yadav Chowk,<br>Hajipur, Vaishali, Bihar – 844101</p>
+        <p>Plus code: M6V7+XW Hajipur</p>
+      </div>
+      <div class="infocard">
+        <h3>🕐 Store hours</h3>
+        <p>Monday – Sunday<br>9:00 AM – 9:00 PM</p>
+        <p>Open all week · festival days included</p>
+      </div>
+      <div class="infocard">
+        <h3>📞 Contact</h3>
+        <p>Call / WhatsApp: +91 91991 56794</p>
+        <p>Orders on WhatsApp, delivery in 1–2 days across Hajipur & nearby Vaishali areas.</p>
+      </div>
+    </div>
+
+    <div class="storecta">
+      <a class="btn-solid" href="tel:+919199156794">📞 Call the store</a>
+      <a class="btn-solid" style="background:#22c55e;color:#052e16" href="https://wa.me/919199156794" target="_blank" rel="noopener noreferrer">💬 WhatsApp us</a>
+      <a class="btn-ghost" href="https://maps.app.goo.gl/T5ayk9QJFQ7WQD6W9?g_st=ac" target="_blank" rel="noopener noreferrer">📍 Open in Google Maps</a>
+    </div>
+
+    <div class="infocard" style="margin-top:20px">
+      <h3>What you'll find in store</h3>
+      <div class="chips" id="storeChips"></div>
+    </div>
   </section>
 
-  <!-- ================= PRIVACY POLICY PAGE ================= -->
+  <!-- ================= PRIVACY POLICY ================= -->
   <section class="view" id="view-privacy" aria-label="Privacy Policy">
     <article class="doc">
       <h1>Privacy Policy</h1>
-      <p class="updated">Last updated: 9 September 2026 · Rishikesh Enterprises, Hajipur</p>
+      <p class="updated">Last updated: 9 September 2026 · Rishikesh Enterprises, Yadav Chowk, Hajipur</p>
 
       <h2>1. Introduction</h2>
       <p>Rishikesh Enterprises ("we", "us", "our") operates this website to showcase our electrical products and accept order enquiries from customers in and around Hajipur, Vaishali, Bihar. We respect your privacy and keep data collection to the absolute minimum needed to serve you.</p>
@@ -244,6 +373,7 @@ footer{background:#0b1220;color:#cbd5e1;margin-top:40px}
       <h2>2. Information we collect</h2>
       <ul>
         <li><strong>Order enquiries:</strong> when you place an order through the WhatsApp checkout, the message contains only the items in your cart, quantities and totals. You choose what personal details (name, delivery address, phone number) to include.</li>
+        <li><strong>Location (optional):</strong> if you allow location access, we compute your approximate distance from our Yadav Chowk store <em>entirely on your device</em> to show "≈ x km from our store". Coordinates are never stored, transmitted or shared.</li>
         <li><strong>Cart contents:</strong> your cart is stored <em>only on your own device</em> in your browser's local storage. It never leaves your device except inside the WhatsApp message you approve.</li>
         <li><strong>We do not</strong> require accounts, passwords, Aadhaar, or payment card details on this website. Payments happen via UPI apps, card machines at the store, or cash on delivery / pickup.</li>
       </ul>
@@ -256,7 +386,7 @@ footer{background:#0b1220;color:#cbd5e1;margin-top:40px}
       </ul>
 
       <h2>4. Cookies &amp; local storage</h2>
-      <p>This website uses no tracking cookies, no advertising pixels and no third-party analytics. A single local-storage key (<code>re_cart_v1</code>) remembers your cart between visits. Clearing your browser data removes it permanently.</p>
+      <p>This website uses no tracking cookies, no advertising pixels and no third-party analytics. A single local-storage key (<code>re_cart_v1</code>) remembers your cart between visits, and a session flag remembers whether we already asked for location. Clearing your browser data removes both permanently.</p>
 
       <h2>5. Sharing of information</h2>
       <p>We never sell or rent your data. Order details are shared only with:</p>
@@ -271,6 +401,7 @@ footer{background:#0b1220;color:#cbd5e1;margin-top:40px}
         <li>This site is designed to run over HTTPS; always check for the padlock before ordering.</li>
         <li>The page sanitises all stored data and escapes all rendered text (textContent-only rendering) to prevent cross-site scripting (XSS). No third-party scripts are loaded.</li>
         <li>External links open with <code>rel="noopener noreferrer"</code> to protect you from tab-nabbing and referrer leakage.</li>
+        <li>Location permission is requested once per session and can be re-triggered manually from the distance chip; refusal never limits shopping features.</li>
         <li>No payment card numbers or UPI PINs are ever requested or stored by this website. Never share an OTP or UPI PIN with anyone, including us.</li>
       </ul>
 
@@ -278,7 +409,7 @@ footer{background:#0b1220;color:#cbd5e1;margin-top:40px}
       <p>Our products and services are intended for adults. We do not knowingly collect information from children under 18.</p>
 
       <h2>8. Your rights</h2>
-      <p>You may ask us at any time to view, correct or delete any personal information we hold about your orders (for example WhatsApp chat history at our shop phone). We will comply within 7 days. Call or WhatsApp us at +91 94301 22345.</p>
+      <p>You may ask us at any time to view, correct or delete any personal information we hold about your orders (for example WhatsApp chat history at our shop phone). We will comply within 7 days. Call or WhatsApp us at +91 91991 56794.</p>
 
       <h2>9. Data retention</h2>
       <p>Order records are kept for a maximum of 12 months for warranty and billing purposes, then deleted. Your cart on this device remains until you clear it or your browser data.</p>
@@ -287,8 +418,8 @@ footer{background:#0b1220;color:#cbd5e1;margin-top:40px}
       <p>Any updates will be posted on this page with a new "last updated" date. Continued use of the site after changes constitutes acceptance.</p>
 
       <h2>11. Contact us</h2>
-      <p>Rishikesh Enterprises, Near Station Road, Hajipur, Vaishali, Bihar – 844101<br>
-      📞 +91 94301 22345 · 💬 WhatsApp: +91 94301 22345<br>
+      <p>Rishikesh Enterprises, East of Naya Tola Main Road, Near Rambalak Chowk, Yadav Chowk, Hajipur, Vaishali, Bihar – 844101<br>
+      📞 +91 91991 56794 · 💬 WhatsApp: +91 91991 56794<br>
       🕐 Open daily, 9:00 AM – 9:00 PM</p>
     </article>
   </section>
@@ -299,14 +430,14 @@ footer{background:#0b1220;color:#cbd5e1;margin-top:40px}
   <div class="foot-inner">
     <div>
       <h3>Rishikesh Enterprises</h3>
-      <p>📍 Near Station Road, Hajipur, Vaishali, Bihar – 844101</p>
-      <p>📞 +91 94301 22345 · 💬 WhatsApp: +91 94301 22345</p>
+      <p>📍 East of Naya Tola Main Rd, Near Rambalak Chowk, Yadav Chowk, Hajipur, Vaishali, Bihar – 844101</p>
+      <p>📞 +91 91991 56794 · 💬 WhatsApp: +91 91991 56794</p>
       <p>🕐 Open daily, 9:00 AM – 9:00 PM</p>
       <div class="foot-actions">
-        <a class="btn-call" href="tel:+919430122345">📞 Call now</a>
+        <a class="btn-call" href="tel:+919199156794">📞 Call now</a>
         <!-- SECURITY: external links use target=_blank + noopener noreferrer -->
-        <a class="btn-wa" href="https://wa.me/919430122345" target="_blank" rel="noopener noreferrer">💬 WhatsApp</a>
-        <a class="btn-dir" href="https://www.google.com/maps/search/?api=1&amp;query=Rishikesh+Enterprises+Hajipur+Vaishali+Bihar" target="_blank" rel="noopener noreferrer">📍 Directions</a>
+        <a class="btn-wa" href="https://wa.me/919199156794" target="_blank" rel="noopener noreferrer">💬 WhatsApp</a>
+        <a class="btn-dir" href="https://maps.app.goo.gl/T5ayk9QJFQ7WQD6W9?g_st=ac" target="_blank" rel="noopener noreferrer">📍 Directions</a>
       </div>
     </div>
     <div>
@@ -314,7 +445,7 @@ footer{background:#0b1220;color:#cbd5e1;margin-top:40px}
       <ul>
         <li><a href="#/categories">Categories</a></li>
         <li><a href="#/popular">Popular products</a></li>
-        <li><a href="#/offers">Today's offers</a></li>
+        <li><a href="#/store">Our Store</a></li>
         <li><a href="#/">Shop dashboard</a></li>
       </ul>
     </div>
@@ -345,7 +476,7 @@ footer{background:#0b1220;color:#cbd5e1;margin-top:40px}
   <a href="#/categories" data-route="categories"><span class="ico">🗂️</span>Categories</a>
   <button type="button" id="bottomSearchBtn"><span class="ico">🔍</span>Search</button>
   <button type="button" id="bottomCartBtn"><span class="ico mini-badge" id="cartCountMobile" data-count="0">🛒</span>Cart</button>
-  <a href="#/offers" data-route="offers"><span class="ico">🏷️</span>Offers</a>
+  <a href="#/store" data-route="store"><span class="ico">🏪</span>Store</a>
 </nav>
 
 <!-- ================= CART DRAWER ================= -->
@@ -368,24 +499,33 @@ footer{background:#0b1220;color:#cbd5e1;margin-top:40px}
 <script>
 /* =====================================================================
    SECURITY MEASURES APPLIED IN THIS FILE
-   1.  No inline event handlers (onclick=...) — all listeners via addEventListener.
-   2.  No eval / setTimeout(string) / document.write. All dynamic text rendered
-       with textContent (XSS-safe); images use a fixed list of trusted URLs.
-   3.  localStorage cart data validated on load (type checks, product-id whitelist,
-       quantity clamped to integer 1–99) — blocks corrupted/injected cart data.
-   4.  External links (WhatsApp, Maps) use target="_blank" rel="noopener noreferrer".
-   5.  Referrer-Policy meta limits referrer leakage.
-   6.  Search input length-limited; its echo rendered via textContent only.
+   1.  No inline event handlers — all listeners via addEventListener.
+   2.  No eval / document.write. All dynamic text rendered with textContent
+       (XSS-safe); images use a fixed list of trusted URLs.
+   3.  localStorage cart validated on load (type checks, product-id whitelist,
+       quantity clamped 1–99) — blocks corrupted/injected cart data.
+   4.  External links (WhatsApp, Maps, tel) use rel="noopener noreferrer".
+   5.  Geolocation: requested once per session, computed ON-DEVICE only
+       (haversine to store coords); coordinates never stored or transmitted.
+   6.  Search input length-limited; echo rendered via textContent only.
    7.  WhatsApp checkout URL built with encodeURIComponent (no URL injection).
    8.  Hash routing whitelisted (no open redirects / hash injection).
    9.  No cookies, trackers, analytics, or payment data handled on-page.
-   10. No external scripts/CDNs required — file is fully self-contained so it
-       loads in any sandboxed preview. (CSP headers recommended at deploy time.)
+   10. Fully self-contained (no external scripts/CDNs) so it loads anywhere.
    ===================================================================== */
 (function () {
   'use strict';
 
-  /* ---------- Trusted image assets ---------- */
+  /* ---------- Store constants ---------- */
+  var WA_LINK   = 'https://wa.me/919199156794';
+  var TEL_LINK  = 'tel:+919199156794';
+  var MAP_LINK  = 'https://maps.app.goo.gl/T5ayk9QJFQ7WQD6W9?g_st=ac';
+  /* Yadav Chowk, Hajipur (store area) — adjust here if you get exact GPS */
+  var SHOP_COORDS = { lat: 25.6955, lng: 85.2132 };
+
+  /* ---------- Trusted image assets ----------
+     NOTE: swap STORE images with your real shop photos when available
+     (keep the same keys, e.g. store1: 'images/store-inside.jpg'). */
   var IMG = {
     bulb:    'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/17e50dc4b-3bbf-48aa-b9b5-a6149a1e2c69.png',
     switchp: 'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/15a5c5d03-2491-4d2f-816f-244105678c8b.png',
@@ -396,42 +536,69 @@ footer{background:#0b1220;color:#cbd5e1;margin-top:40px}
     motor:   'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/18503c6e3-cf7c-4542-80bd-0704b4572242.png',
     mcb:     'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/12792c58f-ab09-449e-a562-603aa1e545f8.png',
     extb:    'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/130a2abf0-d1dc-4603-9a58-6f2e3e29d2e6.png',
-    lantern: 'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1879c175e-777e-4b5d-ad33-2d7873c1dfa7.png'
+    lantern: 'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1879c175e-777e-4b5d-ad33-2d7873c1dfa7.png',
+    ro:      'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1aec7f55e-6651-4e76-a072-b4963a4b9a4f.png',
+    battery: 'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1559a2d96-7024-48b1-a40b-66b8eaa38a90.png',
+    induction:'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/15d975cb6-d90c-4cfb-9630-40001850e212.png',
+    hair:    'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/198dba628-8113-4bec-b6db-20cfe2909507.png',
+    cooler:  'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/14552a96f-8a57-4b4f-90af-ce0bdc606262.png',
+    trimmer: 'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1b57076ac-49f7-4ca0-a7d5-61b0cc4d61cd.png',
+    store1:  'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1ed2098c1-cbe0-44cf-8af9-866f5bf0ea9a.png',
+    store2:  'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1ec9226ac-1657-43e2-a6df-0ddde846a1e7.png',
+    store3:  'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1aa7983bb-873d-4ed8-a846-ccf8f4c139f9.png'
   };
+  var STORE_PHOTOS = [IMG.store1, IMG.store2, IMG.store3];
 
-  /* Inline SVG fallback (data URI) if any image is blocked in the environment */
   var FALLBACK_IMG = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#e2e8f0"/><text x="200" y="160" font-size="64" text-anchor="middle">⚡</text></svg>'
+    '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#e7e2dd"/><text x="200" y="165" font-size="64" text-anchor="middle">⚡</text></svg>'
   );
 
   var CATEGORIES = [
-    { id:'lighting',   name:'LED Bulbs & Lighting', img:IMG.bulb },
-    { id:'switches',   name:'Modular Switches',     img:IMG.switchp },
-    { id:'fans',       name:'Fans & Coolers',       img:IMG.fan },
-    { id:'wiring',     name:'Wires & Cables',       img:IMG.wire },
-    { id:'motors',     name:'Motors & Pumps',       img:IMG.motor },
-    { id:'appliances', name:'Home Appliances',      img:IMG.iron },
-    { id:'safety',     name:'MCB & Safety',         img:IMG.mcb },
-    { id:'extension',  name:'Extension Boards',     img:IMG.extb }
+    { id:'lighting',   name:'LED Bulbs & Lighting',  img:IMG.bulb },
+    { id:'switches',   name:'Modular Switches',      img:IMG.switchp },
+    { id:'fans',       name:'Ceiling & Table Fans',  img:IMG.fan },
+    { id:'wiring',     name:'Wires & Cables',        img:IMG.wire },
+    { id:'motors',     name:'Motors & Pumps',        img:IMG.motor },
+    { id:'appliances', name:'Home Appliances',       img:IMG.iron },
+    { id:'safety',     name:'MCB & Safety',          img:IMG.mcb },
+    { id:'extension',  name:'Extension Boards',      img:IMG.extb },
+    { id:'ro',         name:'RO Water Purifiers',    img:IMG.ro },
+    { id:'battery',    name:'Inverter Batteries',    img:IMG.battery },
+    { id:'induction',  name:'Induction Cooktops',    img:IMG.induction },
+    { id:'haircare',   name:'Hair Dresser & Care',   img:IMG.hair },
+    { id:'cooler',     name:'Air Coolers',           img:IMG.cooler },
+    { id:'grooming',   name:'Trimmers & Grooming',   img:IMG.trimmer }
   ];
 
   var PRODUCTS = [
-    { id:'p01', name:'Havells 9W LED Bulb (B22, Warm White)',        brand:'Havells',   cat:'lighting',   price:149,  mrp:210,  img:IMG.bulb,    popular:true  },
-    { id:'p02', name:'Philips 12W LED Bulb (Cool Daylight)',         brand:'Philips',   cat:'lighting',   price:189,  mrp:249,  img:IMG.bulb,    popular:false },
-    { id:'p03', name:'Philips 15W LED Batten 1.2 m',                 brand:'Philips',   cat:'lighting',   price:299,  mrp:375,  img:IMG.bulb,    popular:false },
-    { id:'p04', name:'Rechargeable LED Emergency Lantern',           brand:'Wipro',     cat:'lighting',   price:649,  mrp:899,  img:IMG.lantern, popular:false },
-    { id:'p05', name:'Anchor Roma 6A Modular Switch',                brand:'Anchor',    cat:'switches',   price:45,   mrp:60,   img:IMG.switchp, popular:false },
-    { id:'p06', name:'Legrand 6-Module Switch Plate',                brand:'Legrand',   cat:'switches',   price:320,  mrp:420,  img:IMG.switchp, popular:false },
-    { id:'p07', name:'Havells Sprint 1200 mm Ceiling Fan',           brand:'Havells',   cat:'fans',       price:1850, mrp:2350, img:IMG.fan,     popular:true  },
-    { id:'p08', name:'Usha Maxx Air 400 mm Table Fan',               brand:'Usha',      cat:'fans',       price:1450, mrp:1790, img:IMG.fan,     popular:false },
-    { id:'p09', name:'Polycab 1.5 sq mm FR Copper Wire (90 m)',      brand:'Polycab',   cat:'wiring',     price:2350, mrp:2800, img:IMG.wire,    popular:true  },
-    { id:'p10', name:'Finolex 2.5 sq mm Copper Wire (90 m)',         brand:'Finolex',   cat:'wiring',     price:3750, mrp:4400, img:IMG.wire,    popular:false },
-    { id:'p11', name:'Bajaj Majesty RX-11 Steam Iron',               brand:'Bajaj',     cat:'appliances', price:1150, mrp:1280, img:IMG.iron,    popular:true  },
-    { id:'p12', name:'Butterfly Rapid Mixer Grinder 750 W',          brand:'Butterfly', cat:'appliances', price:2899, mrp:3600, img:IMG.mixer,   popular:false },
-    { id:'p13', name:'CRI 1 HP Single-Phase Water Pump Motor',       brand:'CRI',       cat:'motors',     price:4999, mrp:5900, img:IMG.motor,   popular:false },
-    { id:'p14', name:'Havells 4-Way MCB Distribution Board',         brand:'Havells',   cat:'safety',     price:899,  mrp:1150, img:IMG.mcb,     popular:false },
-    { id:'p15', name:'Anchor 6-Socket Extension Board (5 m)',        brand:'Anchor',    cat:'extension',  price:499,  mrp:650,  img:IMG.extb,    popular:true  },
-    { id:'p16', name:'GM 4-Socket Extension Board with Surge Guard', brand:'GM',        cat:'extension',  price:349,  mrp:450,  img:IMG.extb,    popular:false }
+    { id:'p01', name:'Havells 9W LED Bulb (B22, Warm White)',        brand:'Havells',   cat:'lighting',   price:149,   mrp:210,   img:IMG.bulb,      popular:true  },
+    { id:'p02', name:'Philips 12W LED Bulb (Cool Daylight)',         brand:'Philips',   cat:'lighting',   price:189,   mrp:249,   img:IMG.bulb,      popular:false },
+    { id:'p03', name:'Philips 15W LED Batten 1.2 m',                 brand:'Philips',   cat:'lighting',   price:299,   mrp:375,   img:IMG.bulb,      popular:false },
+    { id:'p04', name:'Rechargeable LED Emergency Lantern',           brand:'Wipro',     cat:'lighting',   price:649,   mrp:899,   img:IMG.lantern,   popular:false },
+    { id:'p05', name:'Anchor Roma 6A Modular Switch',                brand:'Anchor',    cat:'switches',   price:45,    mrp:60,    img:IMG.switchp,   popular:false },
+    { id:'p06', name:'Legrand 6-Module Switch Plate',                brand:'Legrand',   cat:'switches',   price:320,   mrp:420,   img:IMG.switchp,   popular:false },
+    { id:'p07', name:'Havells Sprint 1200 mm Ceiling Fan',           brand:'Havells',   cat:'fans',       price:1850,  mrp:2350,  img:IMG.fan,       popular:true  },
+    { id:'p08', name:'Usha Maxx Air 400 mm Table Fan',               brand:'Usha',      cat:'fans',       price:1450,  mrp:1790,  img:IMG.fan,       popular:false },
+    { id:'p09', name:'Polycab 1.5 sq mm FR Copper Wire (90 m)',      brand:'Polycab',   cat:'wiring',     price:2350,  mrp:2800,  img:IMG.wire,      popular:true  },
+    { id:'p10', name:'Finolex 2.5 sq mm Copper Wire (90 m)',         brand:'Finolex',   cat:'wiring',     price:3750,  mrp:4400,  img:IMG.wire,      popular:false },
+    { id:'p11', name:'Bajaj Majesty RX-11 Steam Iron',               brand:'Bajaj',     cat:'appliances', price:1150,  mrp:1280,  img:IMG.iron,      popular:true  },
+    { id:'p12', name:'Butterfly Rapid Mixer Grinder 750 W',          brand:'Butterfly', cat:'appliances', price:2899,  mrp:3600,  img:IMG.mixer,     popular:false },
+    { id:'p13', name:'CRI 1 HP Single-Phase Water Pump Motor',       brand:'CRI',       cat:'motors',     price:4999,  mrp:5900,  img:IMG.motor,     popular:false },
+    { id:'p14', name:'Havells 4-Way MCB Distribution Board',         brand:'Havells',   cat:'safety',     price:899,   mrp:1150,  img:IMG.mcb,       popular:false },
+    { id:'p15', name:'Anchor 6-Socket Extension Board (5 m)',        brand:'Anchor',    cat:'extension',  price:499,   mrp:650,   img:IMG.extb,      popular:true  },
+    { id:'p16', name:'GM 4-Socket Extension Board with Surge Guard', brand:'GM',        cat:'extension',  price:349,   mrp:450,   img:IMG.extb,      popular:false },
+    { id:'p17', name:'Havells Aqua Plus 7L RO+UV Water Purifier',    brand:'Havells',   cat:'ro',         price:8499,  mrp:10999, img:IMG.ro,        popular:true  },
+    { id:'p18', name:'Pureit Copper+ 7L RO+UV+UF Purifier',          brand:'Pureit',    cat:'ro',         price:11499, mrp:13999, img:IMG.ro,        popular:false },
+    { id:'p19', name:'Luminous 150Ah Tall Tubular Inverter Battery', brand:'Luminous',  cat:'battery',    price:13499, mrp:15999, img:IMG.battery,   popular:true  },
+    { id:'p20', name:'Microtek 180Ah Jumbo Tall Tubular Battery',    brand:'Microtek',  cat:'battery',    price:16999, mrp:19500, img:IMG.battery,   popular:false },
+    { id:'p21', name:'Prestige PIC 20 1600W Induction Cooktop',      brand:'Prestige',  cat:'induction',  price:2199,  mrp:2899,  img:IMG.induction, popular:true  },
+    { id:'p22', name:'Philips Viva 2100W Induction Cooktop',         brand:'Philips',   cat:'induction',  price:3499,  mrp:4299,  img:IMG.induction, popular:false },
+    { id:'p23', name:'Vega 1200W Foldable Hair Dryer',               brand:'Vega',      cat:'haircare',   price:1099,  mrp:1450,  img:IMG.hair,      popular:false },
+    { id:'p24', name:'Agaro Ceramic Hair Straightener',              brand:'Agaro',     cat:'haircare',   price:899,   mrp:1299,  img:IMG.hair,      popular:false },
+    { id:'p25', name:'Symphony Siesta 65L Air Cooler',               brand:'Symphony',  cat:'cooler',     price:9499,  mrp:11999, img:IMG.cooler,    popular:true  },
+    { id:'p26', name:'Bajaj DMH 90 Neo 90L Desert Cooler',           brand:'Bajaj',     cat:'cooler',     price:10999, mrp:13499, img:IMG.cooler,    popular:false },
+    { id:'p27', name:'Philips BT1230 Cordless Beard Trimmer',        brand:'Philips',   cat:'grooming',   price:1299,  mrp:1699,  img:IMG.trimmer,   popular:true  },
+    { id:'p28', name:'Beardo Blade X Metal-Body Trimmer',            brand:'Beardo',    cat:'grooming',   price:1599,  mrp:2199,  img:IMG.trimmer,   popular:false }
   ];
 
   var DEALS = [
@@ -441,7 +608,7 @@ footer{background:#0b1220;color:#cbd5e1;margin-top:40px}
   ];
 
   var CART_KEY = 're_cart_v1';
-  var ROUTES = ['home','categories','popular','offers','privacy'];
+  var ROUTES = ['home','categories','popular','store','privacy'];
   var state = { route:'home', query:'', category:null, cart:[] };
 
   /* ---------- Helpers ---------- */
@@ -477,7 +644,39 @@ footer{background:#0b1220;color:#cbd5e1;margin-top:40px}
     } catch (e) { return []; }
   }
   function saveCart(){
-    try { window.localStorage.setItem(CART_KEY, JSON.stringify(state.cart)); } catch (e) { /* storage blocked — cart stays in memory */ }
+    try { window.localStorage.setItem(CART_KEY, JSON.stringify(state.cart)); } catch (e) { /* storage blocked */ }
+  }
+
+  /* ---------- Distance from store (on-device only) ---------- */
+  function haversineKm(lat1, lon1, lat2, lon2){
+    var R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLon = (lon2 - lon1) * Math.PI / 180;
+    var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+  function fmtDist(km){
+    if (km < 1) return Math.round(km * 1000) + ' m';
+    if (km < 10) return km.toFixed(1) + ' km';
+    return Math.round(km) + ' km';
+  }
+  function setChip(mode, km){
+    var chip = document.getElementById('distChip');
+    if (mode === 'loading') chip.textContent = '📍 Locating…';
+    else if (mode === 'ok') chip.textContent = '📍 ~' + fmtDist(km) + ' from our store';
+    else if (mode === 'error') chip.textContent = '📍 Location off — tap to show distance';
+    else chip.textContent = '📍 Show distance from our store';
+  }
+  function requestDistance(){
+    if (!navigator.geolocation) { setChip('error'); return; }
+    setChip('loading');
+    try {
+      navigator.geolocation.getCurrentPosition(function (pos) {
+        var d = haversineKm(pos.coords.latitude, pos.coords.longitude, SHOP_COORDS.lat, SHOP_COORDS.lng);
+        setChip('ok', d);
+      }, function () { setChip('error'); },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 });
+    } catch (e) { setChip('error'); }
   }
 
   /* ---------- DOM builders (textContent only → XSS-safe) ---------- */
@@ -583,6 +782,21 @@ footer{background:#0b1220;color:#cbd5e1;margin-top:40px}
     document.getElementById('catResultTitle').textContent = catName(state.category);
     document.getElementById('catResultSub').textContent = 'Everything we stock in this category';
     fillGrid(grid, PRODUCTS.filter(function(p){ return p.cat === state.category; }).map(productCard));
+  }
+  function renderStoreExtras(){
+    var chips = document.getElementById('storeChips');
+    while (chips.firstChild) chips.removeChild(chips.firstChild);
+    CATEGORIES.forEach(function (c) {
+      var s = document.createElement('span'); s.textContent = c.name; chips.appendChild(s);
+    });
+    var home = document.getElementById('homeStoreImg');
+    if (home) home.src = STORE_PHOTOS[1];
+    var imgs = document.querySelectorAll('.store-img');
+    for (var i = 0; i < imgs.length; i++) {
+      var idx = parseInt(imgs[i].getAttribute('data-store'), 10) || 0;
+      imgs[i].src = STORE_PHOTOS[idx] || FALLBACK_IMG;
+      imgs[i].addEventListener('error', function () { this.src = FALLBACK_IMG; }, { once: true });
+    }
   }
 
   /* ---------- Cart UI ---------- */
@@ -729,10 +943,13 @@ footer{background:#0b1220;color:#cbd5e1;margin-top:40px}
     if (gotoBtn) { window.location.hash = '#/' + gotoBtn.getAttribute('data-goto'); return; }
   });
 
-  /* Logo → home (also scrolls to top when already home) */
+  /* Logo → home */
   document.getElementById('logoLink').addEventListener('click', function () {
     if (state.route === 'home') { try { window.scrollTo({ top:0, behavior:'smooth' }); } catch (e) { window.scrollTo(0,0); } }
   });
+
+  /* Distance chip */
+  document.getElementById('distChip').addEventListener('click', requestDistance);
 
   document.getElementById('cartOpenBtn').addEventListener('click', openCart);
   document.getElementById('bottomCartBtn').addEventListener('click', openCart);
@@ -754,9 +971,9 @@ footer{background:#0b1220;color:#cbd5e1;margin-top:40px}
     });
     lines.push('Total: ' + inr(cartSum()));
     lines.push('Please confirm availability and delivery slot. Thank you!');
-    var url = 'https://wa.me/919430122345?text=' + encodeURIComponent(lines.join('\n'));
+    var url = WA_LINK + '?text=' + encodeURIComponent(lines.join('\n'));
     var win = window.open(url, '_blank', 'noopener,noreferrer');
-    if (!win) window.location.href = url; /* popup blocked fallback */
+    if (!win) window.location.href = url;
   });
 
   document.getElementById('bottomSearchBtn').addEventListener('click', function () {
@@ -784,8 +1001,14 @@ footer{background:#0b1220;color:#cbd5e1;margin-top:40px}
     renderHomeProducts();
     renderPopular();
     renderCategoryProducts();
+    renderStoreExtras();
     renderCart();
     applyRoute();
+    /* Ask location once per session to show distance from shop */
+    var auto = function(){ setTimeout(requestDistance, 700); };
+    try {
+      if (!sessionStorage.getItem('re_geo_asked')) { sessionStorage.setItem('re_geo_asked', '1'); auto(); }
+    } catch (e) { auto(); }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

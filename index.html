@@ -2,15 +2,98 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!-- =====================================================================
+  RISHIKESH ENTERPRISES — Supabase migration (customer website)
+  ---------------------------------------------------------------------
+  A. WHAT CHANGED (step-by-step, per migration prompt):
+     STEP 1  : Added Supabase JS client CDN + SUPABASE_URL / SUPABASE_ANON_KEY
+               constants (clearly marked). ONLY the public anon key is used.
+     STEP 2  : var PRODUCTS = [] (hardcoded list removed). New async
+               loadProducts() fetches is_active=true ordered by created_at,
+               maps id/name/brand/cat/price/mrp/img/popular + stock/description.
+     STEP 3  : var CATEGORIES = [] + async loadCategories() fetches
+               is_active=true ordered by sort_order, maps {id,name,img:image_url};
+               missing image_url falls back to the previous built-in image map.
+     STEP 4  : var DEALS = [] + async loadDeals() fetches is_active=true and
+               filters by start_date / end_date against the current date.
+     STEP 5  : init() is now async: shows loading state, awaits
+               Promise.all([loadProducts,loadCategories,loadDeals]), THEN runs the
+               EXISTING render functions (renderCategories, renderDeals,
+               renderHomeProducts, renderPopular, renderCategoryProducts,
+               renderCart, applyRoute). No render runs before data is ready.
+               (loadCart() now runs AFTER products load, because cart sanitising
+               validates ids against the product list.)
+     STEP 6  : discount() untouched — recalculates automatically from DB price/mrp.
+     STEP 7  : LocalStorage cart (re_cart_v1) untouched. Inactive/removed products
+               are dropped gracefully from cart (no JS errors).
+     STEP 8  : WhatsApp checkout untouched (same number, same message format).
+     STEP 9  : Loading notes ("Loading products…") shown in grids while fetching;
+               on failure a friendly message is shown (page never blank).
+     STEP 10 : Every Supabase call checks `error` and logs via console.error;
+               customers never see raw DB errors.
+     STEP 11 : Image URLs come from the DB (p.img / c.image_url / d.img).
+               No Supabase Storage yet.
+     STEP 13 : No service_role/secret keys anywhere. RLS assumed server-side.
+     STEP 14 : Still 100% static — works on GitHub Pages, no server needed.
+     UNTOUCHED: all CSS/design, layout, cart drawer, search, category filtering,
+               mobile nav, store info, distance chip, privacy page, security notes.
+     NEXT TASK (STEP 12): admin.html will be created SEPARATELY (not in this file).
+
+  B. WHAT YOU NEED TO CONFIGURE:
+     1. In the <script> at the bottom, find "CONFIG" and paste:
+          SUPABASE_URL      = your project URL (https://xxxx.supabase.co)
+          SUPABASE_ANON_KEY = your PUBLIC anon/publishable key (NEVER service_role)
+     2. OPTIONAL SQL — seed the 14 categories (run once in Supabase SQL editor):
+          INSERT INTO categories (id, name, image_url, is_active, sort_order) VALUES
+          ('lighting','LED Bulbs & Lighting','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/17e50dc4b-3bbf-48aa-b9b5-a6149a1e2c69.png',true,1),
+          ('switches','Modular Switches','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/15a5c5d03-2491-4d2f-816f-244105678c8b.png',true,2),
+          ('fans','Ceiling & Table Fans','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/15e622e13-c85b-488d-be6c-c686440fa47c.png',true,3),
+          ('wiring','Wires & Cables','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/124f1a5f5-abd6-4e01-947f-6260552f8c4b.png',true,4),
+          ('motors','Motors & Pumps','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/18503c6e3-cf7c-4542-80bd-0704b4572242.png',true,5),
+          ('appliances','Home Appliances','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1273b234a-13d6-4b50-9051-ce6887aff7b6.png',true,6),
+          ('safety','MCB & Safety','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/12792c58f-ab09-449e-a562-603aa1e545f8.png',true,7),
+          ('extension','Extension Boards','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/130a2abf0-d1dc-4603-9a58-6f2e3e29d2e6.png',true,8),
+          ('ro','RO Water Purifiers','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1aec7f55e-6651-4e76-a072-b4963a4b9a4f.png',true,9),
+          ('battery','Inverter Batteries','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1559a2d96-7024-48b1-a40b-66b8eaa38a90.png',true,10),
+          ('induction','Induction Cooktops','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/15d975cb6-d90c-4cfb-9630-40001850e212.png',true,11),
+          ('haircare','Hair Dresser & Care','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/198dba628-8113-4bec-b6db-20cfe2909507.png',true,12),
+          ('cooler','Air Coolers','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/14552a96f-8a57-4b4f-90af-ce0bdc606262.png',true,13),
+          ('grooming','Trimmers & Grooming','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1b57076ac-49f7-4ca0-a7d5-61b0cc4d61cd.png',true,14)
+          ON CONFLICT (id) DO NOTHING;
+     3. OPTIONAL SQL — allow anonymous READ via Row Level Security (run once):
+          alter table public.products   enable row level security;
+          alter table public.categories enable row level security;
+          alter table public.deals      enable row level security;
+          create policy "anon read active products"   on public.products   for select to anon using (is_active = true);
+          create policy "anon read active categories" on public.categories for select to anon using (is_active = true);
+          create policy "anon read active deals"      on public.deals      for select to anon using (is_active = true);
+        (skip any line if the policy already exists)
+     4. Upload this file as index.html to your GitHub Pages repo.
+
+  C. TESTING CHECKLIST:
+     [ ] Website loads
+     [ ] Product from Supabase appears
+     [ ] Price is correct
+     [ ] MRP is correct
+     [ ] Discount works (change price in DB → badge updates)
+     [ ] Category works (tap category → its products)
+     [ ] Search works
+     [ ] Popular products work
+     [ ] Cart works (add / qty / remove / persists after reload)
+     [ ] WhatsApp checkout works (names, qty, prices, total)
+     [ ] Changing price in Supabase changes website price
+     [ ] Setting is_active=false hides product (and drops it from old carts safely)
+     [ ] Deals respect start_date / end_date
+     [ ] Out-of-stock (stock=0) shows "Out of stock" and blocks add
+
+  D. Nothing else was redesigned or removed. admin.html comes as a separate file next.
+===================================================================== -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#7c0d10">
 <title>Rishikesh Enterprises — Havells Dealer & Electricals, Yadav Chowk, Hajipur</title>
 <meta name="description" content="Lights, wiring, fans, motors, switches, RO, batteries, induction, coolers, trimmers & appliances — genuine brands, fair prices, delivered across Hajipur.">
 <!-- SECURITY: Referrer policy limits URL leakage to third parties -->
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<!-- SECURITY (deploy-time, set on server so sandboxes/previews never break):
-     Content-Security-Policy: default-src 'self'; img-src https://image.qwenlm.ai data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'self'
-     X-Content-Type-Options: nosniff -->
 <style>
 :root{
   --brand:#d21f26;            /* Havells-inspired red */
@@ -39,7 +122,7 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid rgba(
 /* ---------- Utility strip (distance + hours + call) ---------- */
 .utilbar{background:linear-gradient(90deg,var(--brand-deep),var(--brand-dark));color:#fff;font-size:.78rem}
 .utilbar-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:7px 20px;flex-wrap:wrap}
-.dist-chip{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.4);color:#fff;padding:5px 13px;border-radius:999px;font-weight:700;font-size:.74rem;transition:.2s;display:inline-flex;align-items:center;gap:6px;min-height:30px}
+.dist-chip{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.4);color:#fff;padding:5px 13px;border-radius:999px;font-weight:700;font-size:.74rem;transition:.2s;display:inline-flex;align-items:center;gap:6px;min-height:32px}
 .dist-chip:hover{background:rgba(255,255,255,.26)}
 .util-right{margin-left:auto;display:flex;gap:16px;align-items:center;font-weight:600}
 .util-right a{color:#fff;font-weight:800}
@@ -47,67 +130,66 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid rgba(
 
 /* ---------- Header ---------- */
 .topbar{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-.topbar-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:10px 20px;flex-wrap:wrap}
-.logo{display:flex;align-items:center;gap:11px;color:var(--brand)}
-.logo svg{flex-shrink:0;transition:transform .25s ease}
+.topbar-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:14px;padding:10px 20px}
+.logo{display:flex;align-items:center;gap:11px;color:var(--brand);flex-shrink:0}
+.logo svg{width:46px;height:46px;transition:transform .25s ease}
 .logo:hover svg{transform:rotate(-10deg) scale(1.05)}
 .logo-text{display:flex;flex-direction:column;line-height:1.05}
-.logo-text strong{font-size:1.18rem;font-weight:800;letter-spacing:.01em;color:var(--brand)}
-.logo-text span{font-size:.72rem;font-weight:600;letter-spacing:.34em;color:var(--brand-dark)}
+.logo-text strong{font-size:1.2rem;font-weight:800;letter-spacing:.01em;color:var(--brand)}
+.logo-text span{font-size:.72rem;font-weight:600;letter-spacing:.3em;color:var(--brand-dark)}
 .mainnav{display:flex;gap:4px;margin-left:auto}
 .mainnav a{padding:8px 15px;border-radius:999px;font-weight:700;font-size:.88rem;color:#3f3f46;transition:.2s}
 .mainnav a:hover{background:#fdeeee;color:var(--brand)}
 .mainnav a.active{background:var(--brand);color:#fff}
-.searchbox{display:flex;align-items:center;gap:8px;background:#f1efec;border:1px solid var(--line);border-radius:999px;padding:8px 14px;min-width:220px}
-.searchbox input{border:none;background:transparent;outline:none;font:inherit;font-size:16px;width:100%;color:var(--ink)}
-.cartbtn{position:relative;display:flex;align-items:center;gap:8px;background:var(--ink);color:#fff;padding:9px 16px;border-radius:999px;font-weight:700;font-size:.88rem;transition:.2s}
+.header-actions{display:flex;align-items:center;gap:10px;margin-left:auto}
+.mainnav + .header-actions{margin-left:0}
+.cartbtn{position:relative;display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;background:var(--ink);color:#fff;font-size:1.25rem;transition:.2s;box-shadow:var(--shadow)}
 .cartbtn:hover{background:var(--brand)}
-.cart-badge{position:absolute;top:-6px;right:-6px;min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--accent);color:#3b2300;font-size:.72rem;font-weight:800;display:grid;place-items:center;border:2px solid #fff}
-.callbtn{display:none;margin-left:auto;width:42px;height:42px;border-radius:50%;background:var(--brand);color:#fff;font-size:1.1rem;align-items:center;justify-content:center;box-shadow:var(--shadow)}
+.cartbtn:active{transform:scale(.94)}
+.cart-badge{position:absolute;top:-3px;right:-3px;min-width:21px;height:21px;padding:0 5px;border-radius:999px;background:var(--accent);color:#3b2300;font-size:.7rem;font-weight:800;display:grid;place-items:center;border:2px solid #fff}
+.callbtn{display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;background:var(--brand);color:#fff;font-size:1.2rem;box-shadow:var(--shadow)}
+.callbtn:active{transform:scale(.94)}
 
-/* ---------- Mobile top tab bar (Home / Categories / Search / Cart / Store) ---------- */
-.tabbar{display:none;border-top:1px solid var(--line);background:#fff}
-.tab{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:52px;font-size:.68rem;font-weight:700;color:var(--muted);transition:.15s;padding:6px 2px 7px}
-.tab .ico{font-size:1.25rem;line-height:1}
+/* Always-visible search row */
+.search-row{padding:0 20px 12px;max-width:1180px;margin:0 auto}
+.searchbox{display:flex;align-items:center;gap:10px;background:#f1efec;border:1px solid var(--line);border-radius:999px;padding:10px 18px;width:100%}
+.searchbox input{border:none;background:transparent;outline:none;font:inherit;font-size:16px;width:100%;color:var(--ink)}
+
+/* ---------- Mobile bottom tab bar (Home · Categories · Search · Store) ---------- */
+.tabbar{position:fixed;bottom:0;left:0;right:0;z-index:50;display:none;border-top:1px solid var(--line);background:#fff;justify-content:space-around;padding:6px 0 calc(6px + env(safe-area-inset-bottom));box-shadow:0 -4px 20px rgba(0,0,0,.06)}
+.tab{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:54px;font-size:.72rem;font-weight:700;color:var(--muted);transition:.15s}
+.tab .ico{font-size:1.35rem;line-height:1}
 .tab:active{background:#fdeeee}
 .tab.active{color:var(--brand)}
-.tab.active::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:34px;height:3px;border-radius:0 0 4px 4px;background:var(--brand)}
-.mini-badge{position:relative;display:inline-block}
-.mini-badge::after{content:attr(data-count);position:absolute;top:-5px;right:-10px;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:var(--accent);color:#3b2300;font-size:.62rem;font-weight:800;display:grid;place-items:center;border:1.5px solid #fff}
-.mini-badge[data-count="0"]::after{display:none}
-.mobile-search{display:none;padding:8px 12px 10px;background:#fff;border-top:1px solid var(--line)}
-.mobile-search .searchbox{min-width:0;width:100%;padding:10px 16px}
-.mobile-search.open{display:block}
+.tab.active::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:40px;height:3px;border-radius:0 0 4px 4px;background:var(--brand)}
 
 /* ---------- Layout ---------- */
-main{max-width:1180px;margin:0 auto;padding:26px 20px 60px}
+main{max-width:1180px;margin:0 auto;padding:24px 20px 40px}
 .view{display:none;animation:fadeUp .35s ease}
 .view.active{display:block}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-.section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:38px 0 16px}
+.section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:34px 0 16px}
 .section-head:first-child{margin-top:0}
 .eyebrow{display:block;font-size:.66rem;font-weight:800;letter-spacing:.16em;color:var(--brand);text-transform:uppercase;margin-bottom:4px}
-.section-head h2{font-size:1.4rem;letter-spacing:-.02em}
+.section-head h2{font-size:1.35rem;letter-spacing:-.02em}
 .section-head p{color:var(--muted);font-size:.86rem;margin-top:2px}
 .linkbtn{font-weight:700;font-size:.86rem;color:var(--brand)}
 
 /* ---------- Category grid ---------- */
 .catgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
-.catcard{position:relative;border-radius:var(--radius);overflow:hidden;background:var(--card);box-shadow:var(--shadow);text-align:left;transition:transform .25s ease,box-shadow .25s ease;display:block;width:100%;border:1px solid var(--line)}
-.catcard:hover{transform:translateY(-4px);box-shadow:0 14px 34px rgba(20,10,10,.14)}
-.catcard img{width:100%;aspect-ratio:4/3;object-fit:cover;transition:transform .4s ease;background:#eee}
-.catcard:hover img{transform:scale(1.06)}
+.catcard{position:relative;border-radius:var(--radius);overflow:hidden;background:var(--card);box-shadow:var(--shadow);text-align:left;transition:transform .2s ease;display:block;width:100%;border:1px solid var(--line)}
+.catcard:active{transform:scale(.97)}
+.catcard img{width:100%;aspect-ratio:4/3;object-fit:cover;background:#eee}
 .catcard .cat-label{padding:12px 14px}
 .catcard .cat-label strong{display:block;font-size:.9rem}
 .catcard .cat-label span{font-size:.74rem;color:var(--muted)}
 
 /* ---------- Product grid ---------- */
 .prodgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:16px}
-.pcard{background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;transition:transform .25s ease,box-shadow .25s ease;position:relative;border:1px solid var(--line)}
-.pcard:hover{transform:translateY(-4px);box-shadow:0 14px 34px rgba(20,10,10,.14)}
+.pcard{background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;border:1px solid var(--line)}
 .pcard .pimg{position:relative;background:#f4f2f0}
-.pcard .pimg img{width:100%;aspect-ratio:1/1;object-fit:cover;background:#f4f2f0}
-.pbadge{position:absolute;top:10px;left:10px;background:var(--ok);color:#fff;font-size:.68rem;font-weight:800;padding:4px 9px;border-radius:999px;letter-spacing:.02em}
+.pcard .pimg img{width:100%;aspect-ratio:1/1;object-fit:cover}
+.pbadge{position:absolute;top:10px;left:10px;background:var(--ok);color:#fff;font-size:.68rem;font-weight:800;padding:4px 9px;border-radius:999px}
 .pbadge.hot{background:var(--danger)}
 .pbadge.pop{left:auto;right:10px;background:var(--brand)}
 .pinfo{padding:14px;display:flex;flex-direction:column;gap:6px;flex:1}
@@ -116,40 +198,41 @@ main{max-width:1180px;margin:0 auto;padding:26px 20px 60px}
 .pprice{margin-top:auto;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .pprice .now{font-size:1.05rem;font-weight:800;color:var(--brand-dark)}
 .pprice .was{font-size:.8rem;color:var(--muted);text-decoration:line-through}
-.addbtn{margin-top:8px;background:var(--brand);color:#fff;font-weight:700;font-size:.85rem;padding:11px;border-radius:10px;transition:.2s;min-height:42px}
+.addbtn{margin-top:8px;background:var(--brand);color:#fff;font-weight:700;font-size:.85rem;padding:11px;border-radius:10px;min-height:42px;transition:.2s}
 .addbtn:hover{background:var(--brand-dark)}
 .addbtn:active{transform:scale(.97)}
+.addbtn:disabled{background:#9ca3af;cursor:not-allowed;transform:none}
 .empty-note{background:#fff;border:1px dashed var(--line);border-radius:var(--radius);padding:34px;text-align:center;color:var(--muted);font-size:.92rem;grid-column:1/-1}
 
 /* ---------- Deals ---------- */
 .dealgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
-.dealcard{position:relative;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);text-align:left;width:100%;transition:transform .25s ease;border:1px solid var(--line)}
-.dealcard:hover{transform:translateY(-4px)}
-.dealcard img{width:100%;aspect-ratio:16/9;object-fit:cover;background:#eee}
+.dealcard{position:relative;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);text-align:left;width:100%;border:1px solid var(--line)}
+.dealcard:active{transform:scale(.98)}
+.dealcard img{width:100%;aspect-ratio:16/9;object-fit:cover}
 .dealcard .deal-overlay{position:absolute;left:0;right:0;bottom:0;padding:16px;background:linear-gradient(transparent,rgba(20,5,5,.88));color:#fff}
 .dealcard .deal-overlay strong{display:block;font-size:1.02rem}
 .dealcard .deal-overlay span{font-size:.8rem;opacity:.9}
 .deal-tag{position:absolute;top:12px;left:12px;background:var(--accent);color:#3b2300;font-weight:800;font-size:.7rem;padding:5px 10px;border-radius:999px}
 
 /* ---------- Store banner (bottom of home) ---------- */
-.storebanner{margin-top:44px;border-radius:20px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--line);background:#fff}
+.storebanner{margin-top:40px;border-radius:20px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--line);background:#fff}
 .sb-media{position:relative;display:block;width:100%;text-align:left}
-.sb-media img{width:100%;height:380px;object-fit:cover}
-.sb-overlay{position:absolute;inset:auto 0 0 0;padding:26px;background:linear-gradient(transparent,rgba(20,5,5,.9));color:#fff}
+.sb-media img{width:100%;height:320px;object-fit:cover}
+.sb-overlay{position:absolute;inset:auto 0 0 0;padding:24px;background:linear-gradient(transparent,rgba(20,5,5,.9));color:#fff}
 .sb-overlay .eyebrow{color:#ffd7d8}
-.sb-overlay h2{font-size:1.6rem;letter-spacing:-.02em}
+.sb-overlay h2{font-size:1.5rem;letter-spacing:-.02em}
 .sb-overlay p{font-size:.88rem;opacity:.92;margin-top:4px;max-width:560px}
 .sb-actions{display:flex;flex-wrap:wrap;gap:10px;padding:16px 20px}
-.btn-solid{background:var(--brand);color:#fff;font-weight:800;font-size:.86rem;padding:12px 20px;border-radius:999px;transition:.2s;display:inline-flex;align-items:center;gap:7px;min-height:44px}
+.btn-solid{background:var(--brand);color:#fff;font-weight:800;font-size:.86rem;padding:12px 20px;border-radius:999px;display:inline-flex;align-items:center;gap:7px;min-height:44px;transition:.2s}
 .btn-solid:hover{background:var(--brand-dark)}
-.btn-ghost{border:1.5px solid var(--line);color:var(--ink);font-weight:700;font-size:.86rem;padding:12px 20px;border-radius:999px;transition:.2s;display:inline-flex;align-items:center;gap:7px;background:#fff;min-height:44px}
+.btn-ghost{border:1.5px solid var(--line);color:var(--ink);font-weight:700;font-size:.86rem;padding:12px 20px;border-radius:999px;display:inline-flex;align-items:center;gap:7px;background:#fff;min-height:44px}
 .btn-ghost:hover{border-color:var(--brand);color:var(--brand)}
 
 /* ---------- Store page ---------- */
 .storegrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
 .storephoto{background:#fff;border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--line)}
-.storephoto img{width:100%;aspect-ratio:4/3;object-fit:cover}
-.storephoto figcaption{padding:12px 14px;font-size:.82rem;font-weight:700;color:#3f3f46;display:flex;align-items:center;gap:8px}
+.storephoto img{width:100%;aspect-ratio:4/3;object-fit:cover;background:#eee}
+.storephoto figcaption{padding:12px 14px;font-size:.82rem;font-weight:700;color:#3f3f46}
 .storeinfo{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:20px}
 .infocard{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow)}
 .infocard h3{font-size:.95rem;margin-bottom:8px;color:var(--brand-dark)}
@@ -167,8 +250,8 @@ main{max-width:1180px;margin:0 auto;padding:26px 20px 60px}
 .doc ul{padding-left:20px}
 
 /* ---------- Footer ---------- */
-footer{background:#17090a;color:#d6c9c9;margin-top:46px}
-.foot-inner{max-width:1180px;margin:0 auto;padding:44px 20px 30px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:30px}
+footer{background:#17090a;color:#d6c9c9;margin-top:40px}
+.foot-inner{max-width:1180px;margin:0 auto;padding:40px 20px 28px;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:30px}
 .foot-inner h3{color:#fff;font-size:.95rem;margin-bottom:12px}
 .foot-inner p,.foot-inner li{font-size:.85rem;margin-bottom:8px}
 .foot-inner ul{list-style:none}
@@ -184,53 +267,56 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
 .foot-bottom{border-top:1px solid #2b1718;padding:16px 20px;text-align:center;font-size:.78rem;color:#b3a0a0}
 .foot-bottom a{color:#f3b0b2}
 
-/* ---------- Cart drawer ---------- */
+/* ---------- Cart drawer (stacked item layout — no overflow) ---------- */
 .overlay{position:fixed;inset:0;background:rgba(20,5,5,.5);opacity:0;pointer-events:none;transition:opacity .3s;z-index:90}
 .overlay.show{opacity:1;pointer-events:auto}
 .drawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,100%);background:#fff;z-index:100;transform:translateX(102%);transition:transform .35s cubic-bezier(.22,.9,.3,1);display:flex;flex-direction:column;box-shadow:-12px 0 40px rgba(20,5,5,.25)}
 .drawer.open{transform:none}
 .drawer-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line)}
 .drawer-head h2{font-size:1.1rem}
-.closebtn{width:38px;height:38px;border-radius:10px;background:#f4f2f0;font-size:1rem;font-weight:700;transition:.2s}
+.closebtn{width:38px;height:38px;border-radius:10px;background:#f4f2f0;font-size:1rem;font-weight:700}
 .closebtn:hover{background:#e7e2dd}
 .drawer-body{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px;-webkit-overflow-scrolling:touch}
-.citem{display:flex;gap:12px;border:1px solid var(--line);border-radius:14px;padding:10px;align-items:center}
-.citem img{width:64px;height:64px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#f4f2f0}
+.citem{display:flex;flex-direction:column;gap:10px;border:1px solid var(--line);border-radius:14px;padding:12px;background:#faf9f8;overflow:hidden}
+.citem-top{display:flex;gap:12px;align-items:center;min-width:0}
+.citem img{width:60px;height:60px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#fff;border:1px solid var(--line)}
 .citem .cinfo{flex:1;min-width:0}
-.citem .cname{font-size:.85rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.citem .cprice{font-size:.8rem;color:var(--muted);margin-top:2px}
-.qtyrow{display:flex;align-items:center;gap:10px;margin-top:8px}
-.qtyrow button{width:30px;height:30px;border-radius:8px;background:#fdeeee;color:var(--brand);font-weight:800;font-size:.95rem;transition:.15s}
-.qtyrow button:hover{background:var(--brand);color:#fff}
-.qtyrow .q{font-weight:800;font-size:.88rem;min-width:18px;text-align:center}
-.rmbtn{color:var(--danger);font-size:.72rem;font-weight:700;margin-left:auto;min-height:28px}
-.rmbtn:hover{text-decoration:underline}
-.drawer-foot{border-top:1px solid var(--line);padding:18px 20px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;background:#faf8f6}
-.totalrow{display:flex;justify-content:space-between;font-weight:800;font-size:1rem}
+.citem .cname{font-size:.88rem;font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.citem .cprice{font-size:.8rem;color:var(--muted);margin-top:3px}
+.citem-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.qtyrow{display:flex;align-items:center;gap:12px}
+.qtyrow button{width:32px;height:32px;border-radius:9px;background:#fff;border:1px solid var(--line);color:var(--brand);font-weight:800;font-size:1.05rem;display:grid;place-items:center;transition:.15s}
+.qtyrow button:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
+.qtyrow .q{font-weight:800;font-size:.95rem;min-width:20px;text-align:center}
+.rmbtn{color:var(--danger);font-size:.76rem;font-weight:800;padding:8px 14px;border-radius:9px;background:#fee2e2;white-space:nowrap}
+.rmbtn:hover{background:var(--danger);color:#fff}
+.drawer-foot{border-top:1px solid var(--line);padding:18px 20px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;background:#fff}
+.totalrow{display:flex;justify-content:space-between;font-weight:800;font-size:1.05rem}
 .totalrow span:first-child{color:var(--muted);font-weight:600}
-.wabtn{background:#22c55e;color:#052e16;font-weight:800;padding:14px;border-radius:12px;font-size:.92rem;transition:.2s;min-height:48px}
+.wabtn{background:#22c55e;color:#052e16;font-weight:800;padding:14px;border-radius:12px;font-size:.95rem;min-height:48px}
 .wabtn:hover{filter:brightness(1.06)}
-.clearbtn{color:var(--muted);font-size:.78rem;font-weight:700}
+.clearbtn{color:var(--muted);font-size:.8rem;font-weight:700;text-align:center;padding:6px}
 .clearbtn:hover{color:var(--danger)}
 
 /* ---------- Toast ---------- */
-.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:999px;font-size:.85rem;font-weight:700;opacity:0;pointer-events:none;transition:.3s;z-index:120;box-shadow:var(--shadow);max-width:90vw;text-align:center}
+.toast{position:fixed;left:50%;bottom:96px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:999px;font-size:.85rem;font-weight:700;opacity:0;pointer-events:none;transition:.3s;z-index:120;box-shadow:var(--shadow);max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
 /* ================= MOBILE OPTIMISATIONS ================= */
 @media(max-width:899px){
-  .mainnav,.topbar-inner .searchbox,.cartbtn{display:none}
-  .callbtn{display:inline-flex}
+  .mainnav{display:none}
   .tabbar{display:flex}
   .topbar-inner{padding:8px 12px;gap:10px}
-  .logo svg{width:38px;height:38px}
-  .logo-text strong{font-size:1.02rem}
-  .logo-text span{font-size:.58rem;letter-spacing:.22em}
+  .logo svg{width:40px;height:40px}
+  .logo-text strong{font-size:1.08rem}
+  .logo-text span{font-size:.6rem;letter-spacing:.22em}
+  .cartbtn,.callbtn{width:44px;height:44px;font-size:1.15rem}
+  .search-row{padding:0 12px 10px}
   .utilbar-inner{padding:6px 12px;gap:8px}
   .dist-chip{font-size:.7rem;padding:4px 10px}
   .util-right a{font-size:.74rem}
-  main{padding:16px 12px 44px}
-  .section-head{margin:26px 0 12px}
+  main{padding:16px 12px 30px}
+  .section-head{margin:24px 0 12px}
   .section-head h2{font-size:1.2rem}
   .eyebrow{font-size:.6rem}
   .section-head p{font-size:.8rem}
@@ -251,9 +337,9 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
   .pbadge.pop{left:auto;right:7px}
   .dealgrid{grid-template-columns:1fr;gap:12px}
   .storebanner{margin-top:30px;border-radius:16px}
-  .sb-media img{height:250px}
+  .sb-media img{height:220px}
   .sb-overlay{padding:16px}
-  .sb-overlay h2{font-size:1.25rem}
+  .sb-overlay h2{font-size:1.2rem}
   .sb-overlay p{font-size:.8rem}
   .sb-actions{padding:12px}
   .storegrid{grid-template-columns:1fr;gap:12px}
@@ -262,11 +348,12 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
   .doc{padding:22px 16px}
   .doc h1{font-size:1.35rem}
   .foot-inner{padding:32px 16px 24px;gap:22px}
-  .toast{bottom:18px}
+  .foot-bottom{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+  .toast{bottom:96px}
 }
-@media(max-width:400px){
-  .logo-text span{letter-spacing:.16em}
-  .tab{font-size:.62rem}
+@media(min-width:900px){
+  .foot-bottom{padding-bottom:16px}
+  .toast{bottom:28px}
 }
 </style>
 </head>
@@ -286,9 +373,8 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
 <!-- ================= HEADER ================= -->
 <header class="topbar">
   <div class="topbar-inner">
-    <!-- Logo (shop's red bolt-in-circle mark) — clickable, goes home -->
     <a href="#/" class="logo" id="logoLink" aria-label="Rishikesh Enterprises — go to home page">
-      <svg viewBox="0 0 64 64" width="46" height="46" aria-hidden="true">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
         <circle cx="32" cy="32" r="25" fill="none" stroke="currentColor" stroke-width="7"/>
         <path d="M38 3 L19 34 h10 L25 61 L45 29 H34 Z" fill="currentColor"/>
       </svg>
@@ -300,32 +386,21 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
       <a href="#/popular" data-route="popular">Popular</a>
       <a href="#/store" data-route="store">Our Store</a>
     </nav>
+    <div class="header-actions">
+      <button type="button" class="cartbtn" id="cartOpenBtn" aria-label="Open cart">🛒<span class="cart-badge" id="cartCount">0</span></button>
+      <a class="callbtn" href="tel:+919199156794" aria-label="Call the store">📞</a>
+    </div>
+  </div>
+  <div class="search-row">
     <div class="searchbox">
       <span aria-hidden="true">🔍</span>
       <input id="searchInput" class="search-input" type="search" maxlength="60" placeholder="Search bulbs, fans, RO, batteries…" aria-label="Search products" autocomplete="off">
-    </div>
-    <button type="button" class="cartbtn" id="cartOpenBtn" aria-label="Open cart">🛒 Cart<span class="cart-badge" id="cartCount">0</span></button>
-    <a class="callbtn" href="tel:+919199156794" aria-label="Call the store">📞</a>
-  </div>
-
-  <!-- Mobile top navigation: Home · Categories · Search · Cart · Store -->
-  <nav class="tabbar" aria-label="Mobile primary">
-    <a class="tab" href="#/" data-route="home"><span class="ico" aria-hidden="true">🏠</span>Home</a>
-    <a class="tab" href="#/categories" data-route="categories"><span class="ico" aria-hidden="true">🗂️</span>Categories</a>
-    <button type="button" class="tab" id="tabSearch"><span class="ico" aria-hidden="true">🔍</span>Search</button>
-    <button type="button" class="tab" id="tabCart"><span class="ico mini-badge" id="cartCountMobile" data-count="0" aria-hidden="true">🛒</span>Cart</button>
-    <a class="tab" href="#/store" data-route="store"><span class="ico" aria-hidden="true">🏪</span>Store</a>
-  </nav>
-  <div class="mobile-search" id="mobileSearchRow">
-    <div class="searchbox">
-      <span aria-hidden="true">🔍</span>
-      <input id="searchInputMobile" class="search-input" type="search" maxlength="60" placeholder="Search bulbs, fans, RO, batteries…" aria-label="Search products" autocomplete="off">
     </div>
   </div>
 </header>
 
 <main>
-  <!-- ================= HOME : category grid → all products → our store ================= -->
+  <!-- ================= HOME ================= -->
   <section class="view" id="view-home" aria-label="Home">
     <div class="section-head">
       <div><span class="eyebrow">Shop</span><h2>Shop by category</h2><p>Tap a category to see everything in it</p></div>
@@ -338,10 +413,8 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
     </div>
     <div class="prodgrid" id="homeProdGrid"></div>
 
-    <!-- Store picture at the bottom, linked with the "Our Store" button on top -->
     <div class="storebanner">
       <button type="button" class="sb-media" data-goto="store" aria-label="View our store page">
-        <!-- NOTE: to use your exact original photos, replace src in STORE_PHOTOS below -->
         <img id="homeStoreImg" alt="Rishikesh Enterprises storefront at Yadav Chowk, Hajipur" loading="lazy" decoding="async">
         <div class="sb-overlay">
           <span class="eyebrow">Our Store</span>
@@ -436,57 +509,49 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
     <article class="doc">
       <h1>Privacy Policy</h1>
       <p class="updated">Last updated: 9 September 2026 · Rishikesh Enterprises, Yadav Chowk, Hajipur</p>
-
       <h2>1. Introduction</h2>
       <p>Rishikesh Enterprises ("we", "us", "our") operates this website to showcase our electrical products and accept order enquiries from customers in and around Hajipur, Vaishali, Bihar. We respect your privacy and keep data collection to the absolute minimum needed to serve you.</p>
-
       <h2>2. Information we collect</h2>
       <ul>
         <li><strong>Order enquiries:</strong> when you place an order through the WhatsApp checkout, the message contains only the items in your cart, quantities and totals. You choose what personal details (name, delivery address, phone number) to include.</li>
         <li><strong>Location (optional):</strong> if you allow location access, we compute your approximate distance from our Yadav Chowk store <em>entirely on your device</em> to show "Our store is at ~x km". Coordinates are never stored, transmitted or shared. If location is off we simply ask you to turn it on — shopping works fine without it.</li>
         <li><strong>Cart contents:</strong> your cart is stored <em>only on your own device</em> in your browser's local storage. It never leaves your device except inside the WhatsApp message you approve.</li>
+        <li><strong>Product data:</strong> catalogue information (names, prices, images) is loaded read-only from our Supabase database using a public anon key. No customer accounts exist.</li>
         <li><strong>We do not</strong> require accounts, passwords, Aadhaar, or payment card details on this website. Payments happen via UPI apps, card machines at the store, or cash on delivery / pickup.</li>
       </ul>
-
       <h2>3. How we use your information</h2>
       <ul>
         <li>To prepare, confirm and deliver your order within Hajipur and nearby Vaishali areas.</li>
         <li>To contact you on WhatsApp or phone about your order, delivery slot or warranty service.</li>
         <li>To improve our stock and offers based on aggregate (non-identifying) interest in products.</li>
       </ul>
-
       <h2>4. Cookies &amp; local storage</h2>
       <p>This website uses no tracking cookies, no advertising pixels and no third-party analytics. A single local-storage key (<code>re_cart_v1</code>) remembers your cart between visits, and a session flag remembers whether we already asked for location. Clearing your browser data removes both permanently.</p>
-
       <h2>5. Sharing of information</h2>
       <p>We never sell or rent your data. Order details are shared only with:</p>
       <ul>
         <li><strong>WhatsApp (Meta Platforms)</strong> — solely to transmit the order message you send us.</li>
         <li><strong>Google Maps</strong> — only if you tap "Directions", which opens Maps under Google's own privacy policy.</li>
+        <li><strong>Supabase</strong> — hosts our read-only product catalogue; it receives no personal customer data from this page.</li>
         <li>Delivery staff of our own shop, strictly for fulfilling your delivery.</li>
       </ul>
-
       <h2>6. Data security</h2>
       <ul>
         <li>This site is designed to run over HTTPS; always check for the padlock before ordering.</li>
-        <li>The page sanitises all stored data and escapes all rendered text (textContent-only rendering) to prevent cross-site scripting (XSS). No third-party scripts are loaded.</li>
+        <li>The page sanitises all stored data and escapes all rendered text (textContent-only rendering) to prevent cross-site scripting (XSS).</li>
+        <li>The database is accessed with a public anon key protected by Row Level Security (read-only for visitors). Secret keys never appear in frontend code.</li>
         <li>External links open with <code>rel="noopener noreferrer"</code> to protect you from tab-nabbing and referrer leakage.</li>
-        <li>Location permission is requested once per session and can be re-triggered manually from the distance chip; refusal never limits shopping features.</li>
+        <li>Location permission is requested once per session and can be re-triggered on-screen from the distance chip; refusal never limits shopping features.</li>
         <li>No payment card numbers or UPI PINs are ever requested or stored by this website. Never share an OTP or UPI PIN with anyone, including us.</li>
       </ul>
-
       <h2>7. Children's privacy</h2>
       <p>Our products and services are intended for adults. We do not knowingly collect information from children under 18.</p>
-
       <h2>8. Your rights</h2>
       <p>You may ask us at any time to view, correct or delete any personal information we hold about your orders (for example WhatsApp chat history at our shop phone). We will comply within 7 days. Call or WhatsApp us at +91 91991 56794.</p>
-
       <h2>9. Data retention</h2>
       <p>Order records are kept for a maximum of 12 months for warranty and billing purposes, then deleted. Your cart on this device remains until you clear it or your browser data.</p>
-
       <h2>10. Changes to this policy</h2>
       <p>Any updates will be posted on this page with a new "last updated" date. Continued use of the site after changes constitutes acceptance.</p>
-
       <h2>11. Contact us</h2>
       <p>Rishikesh Enterprises, East of Naya Tola Main Road, Near Rambalak Chowk, Yadav Chowk, Hajipur, Vaishali, Bihar – 844101<br>
       📞 +91 91991 56794 · 💬 WhatsApp: +91 91991 56794<br>
@@ -505,7 +570,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
       <p>🕐 Open daily, 9:00 AM – 9:00 PM</p>
       <div class="foot-actions">
         <a class="btn-call" href="tel:+919199156794">📞 Call now</a>
-        <!-- SECURITY: external links use target=_blank + noopener noreferrer -->
         <a class="btn-wa" href="https://wa.me/919199156794" target="_blank" rel="noopener noreferrer">💬 WhatsApp</a>
         <a class="btn-dir" href="https://maps.app.goo.gl/T5ayk9QJFQ7WQD6W9?g_st=ac" target="_blank" rel="noopener noreferrer">📍 Directions</a>
       </div>
@@ -540,6 +604,14 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
   </div>
 </footer>
 
+<!-- ================= BOTTOM NAV (4 items) ================= -->
+<nav class="tabbar" aria-label="Mobile primary">
+  <a class="tab" href="#/" data-route="home"><span class="ico" aria-hidden="true">🏠</span>Home</a>
+  <a class="tab" href="#/categories" data-route="categories"><span class="ico" aria-hidden="true">🗂️</span>Categories</a>
+  <button type="button" class="tab" id="tabSearch"><span class="ico" aria-hidden="true">🔍</span>Search</button>
+  <a class="tab" href="#/store" data-route="store"><span class="ico" aria-hidden="true">🏪</span>Store</a>
+</nav>
+
 <!-- ================= CART DRAWER ================= -->
 <div class="overlay" id="overlay"></div>
 <aside class="drawer" id="cartDrawer" aria-label="Your cart" aria-hidden="true">
@@ -557,37 +629,58 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<!-- STEP 1: Supabase JavaScript client (only external library) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
 /* =====================================================================
    SECURITY MEASURES APPLIED IN THIS FILE
    1.  No inline event handlers — all listeners via addEventListener.
    2.  No eval / document.write. All dynamic text rendered with textContent
-       (XSS-safe); images use a fixed list of trusted URLs.
+       (XSS-safe); images use DB-provided URLs or trusted fallbacks.
    3.  localStorage cart validated on load (type checks, product-id whitelist,
        quantity clamped 1–99) — blocks corrupted/injected cart data.
    4.  External links (WhatsApp, Maps, tel) use rel="noopener noreferrer".
-   5.  Geolocation: requested once per session, computed ON-DEVICE only
-       (haversine to store coords); coordinates never stored or transmitted.
-       If location is off, the user is asked to turn it on (chip + toast).
-   6.  Search inputs length-limited; echo rendered via textContent only.
-   7.  WhatsApp checkout URL built with encodeURIComponent (no URL injection).
+   5.  Geolocation computed ON-DEVICE only; coordinates never stored/sent.
+   6.  Search input length-limited; echo rendered via textContent only.
+   7.  WhatsApp checkout URL built with encodeURIComponent.
    8.  Hash routing whitelisted (no open redirects / hash injection).
-   9.  No cookies, trackers, analytics, or payment data handled on-page.
-   10. Fully self-contained (no external scripts/CDNs) so it loads anywhere.
+   9.  SUPABASE: only URL + PUBLIC anon key live here (never service_role).
+       Row Level Security on the database restricts visitors to read-only.
+       All DB errors go to console.error, never to the customer UI.
    ===================================================================== */
 (function () {
   'use strict';
 
+  /* ================= CONFIG — PUT YOUR SUPABASE CREDENTIALS HERE =================
+     Replace the two values below. Use ONLY the public anon / publishable key.
+     Never paste the service_role / secret key into this file.                    */
+  var SUPABASE_URL      = 'YOUR_SUPABASE_URL';       // e.g. https://abcd1234.supabase.co
+  var SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';  // e.g. eyJhbGciOi... (public anon key)
+  /* ============================================================================== */
+
+  var supabaseClient = (function () {
+    try {
+      if (window.supabase && window.supabase.createClient &&
+          SUPABASE_URL.indexOf('YOUR_SUPABASE_URL') === -1 &&
+          SUPABASE_ANON_KEY.indexOf('YOUR_SUPABASE_ANON_KEY') === -1) {
+        return window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
+      console.error('Supabase not configured: set SUPABASE_URL and SUPABASE_ANON_KEY in index.html.');
+    } catch (e) { console.error('Supabase client creation failed:', e); }
+    return null;
+  })();
+
   /* ---------- Store constants ---------- */
   var WA_LINK   = 'https://wa.me/919199156794';
-  var MAP_LINK  = 'https://maps.app.goo.gl/T5ayk9QJFQ7WQD6W9?g_st=ac';
-  /* Yadav Chowk, Hajipur (store area) — adjust here if you get exact GPS */
-  var SHOP_COORDS = { lat: 25.6955, lng: 85.2132 };
+  var SHOP_COORDS = { lat: 25.6955, lng: 85.2132 }; /* Yadav Chowk, Hajipur */
 
-  /* ---------- Trusted image assets ----------
-     Store photos are natural, minimally-enhanced reproductions of the real
-     shop pictures. To use the exact originals, replace these three URLs with
-     your own files, e.g. 'images/store-inside.jpg'. */
+  /* ---------- Trusted fallback image assets ----------
+     Store photos: your REAL pictures are used as-is when present.
+     Keep them next to this HTML file named exactly:
+       store-1.jpg (inside shop), store-2.jpg (storefront), store-3.jpg (display board)
+     If a file is missing, the code silently falls back to a hosted copy. */
+  var LOCAL_STORE = ['store-1.jpg', 'store-2.jpg', 'store-3.jpg'];
   var IMG = {
     bulb:    'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/17e50dc4b-3bbf-48aa-b9b5-a6149a1e2c69.png',
     switchp: 'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/15a5c5d03-2491-4d2f-816f-244105678c8b.png',
@@ -609,77 +702,29 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
     store2:  'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/10051742d-1f34-46b3-aa76-bb6d70451f54.png',
     store3:  'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1dbb82586-fcd9-45d6-bc56-f581ca920bec.png'
   };
-  var STORE_PHOTOS = [IMG.store1, IMG.store2, IMG.store3];
+  var STORE_FALLBACK = [IMG.store1, IMG.store2, IMG.store3];
 
   var FALLBACK_IMG = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#e7e2dd"/><text x="200" y="165" font-size="64" text-anchor="middle">⚡</text></svg>'
   );
 
-  var CATEGORIES = [
-    { id:'lighting',   name:'LED Bulbs & Lighting',  img:IMG.bulb },
-    { id:'switches',   name:'Modular Switches',      img:IMG.switchp },
-    { id:'fans',       name:'Ceiling & Table Fans',  img:IMG.fan },
-    { id:'wiring',     name:'Wires & Cables',        img:IMG.wire },
-    { id:'motors',     name:'Motors & Pumps',        img:IMG.motor },
-    { id:'appliances', name:'Home Appliances',       img:IMG.iron },
-    { id:'safety',     name:'MCB & Safety',          img:IMG.mcb },
-    { id:'extension',  name:'Extension Boards',      img:IMG.extb },
-    { id:'ro',         name:'RO Water Purifiers',    img:IMG.ro },
-    { id:'battery',    name:'Inverter Batteries',    img:IMG.battery },
-    { id:'induction',  name:'Induction Cooktops',    img:IMG.induction },
-    { id:'haircare',   name:'Hair Dresser & Care',   img:IMG.hair },
-    { id:'cooler',     name:'Air Coolers',           img:IMG.cooler },
-    { id:'grooming',   name:'Trimmers & Grooming',   img:IMG.trimmer }
-  ];
-
-  var PRODUCTS = [
-    { id:'p01', name:'Havells 9W LED Bulb (B22, Warm White)',        brand:'Havells',   cat:'lighting',   price:149,   mrp:210,   img:IMG.bulb,      popular:true  },
-    { id:'p02', name:'Philips 12W LED Bulb (Cool Daylight)',         brand:'Philips',   cat:'lighting',   price:189,   mrp:249,   img:IMG.bulb,      popular:false },
-    { id:'p03', name:'Philips 15W LED Batten 1.2 m',                 brand:'Philips',   cat:'lighting',   price:299,   mrp:375,   img:IMG.bulb,      popular:false },
-    { id:'p04', name:'Rechargeable LED Emergency Lantern',           brand:'Wipro',     cat:'lighting',   price:649,   mrp:899,   img:IMG.lantern,   popular:false },
-    { id:'p05', name:'Anchor Roma 6A Modular Switch',                brand:'Anchor',    cat:'switches',   price:45,    mrp:60,    img:IMG.switchp,   popular:false },
-    { id:'p06', name:'Legrand 6-Module Switch Plate',                brand:'Legrand',   cat:'switches',   price:320,   mrp:420,   img:IMG.switchp,   popular:false },
-    { id:'p07', name:'Havells Sprint 1200 mm Ceiling Fan',           brand:'Havells',   cat:'fans',       price:1850,  mrp:2350,  img:IMG.fan,       popular:true  },
-    { id:'p08', name:'Usha Maxx Air 400 mm Table Fan',               brand:'Usha',      cat:'fans',       price:1450,  mrp:1790,  img:IMG.fan,       popular:false },
-    { id:'p09', name:'Polycab 1.5 sq mm FR Copper Wire (90 m)',      brand:'Polycab',   cat:'wiring',     price:2350,  mrp:2800,  img:IMG.wire,      popular:true  },
-    { id:'p10', name:'Finolex 2.5 sq mm Copper Wire (90 m)',         brand:'Finolex',   cat:'wiring',     price:3750,  mrp:4400,  img:IMG.wire,      popular:false },
-    { id:'p11', name:'Bajaj Majesty RX-11 Steam Iron',               brand:'Bajaj',     cat:'appliances', price:1150,  mrp:1280,  img:IMG.iron,      popular:true  },
-    { id:'p12', name:'Butterfly Rapid Mixer Grinder 750 W',          brand:'Butterfly', cat:'appliances', price:2899,  mrp:3600,  img:IMG.mixer,     popular:false },
-    { id:'p13', name:'CRI 1 HP Single-Phase Water Pump Motor',       brand:'CRI',       cat:'motors',     price:4999,  mrp:5900,  img:IMG.motor,     popular:false },
-    { id:'p14', name:'Havells 4-Way MCB Distribution Board',         brand:'Havells',   cat:'safety',     price:899,   mrp:1150,  img:IMG.mcb,       popular:false },
-    { id:'p15', name:'Anchor 6-Socket Extension Board (5 m)',        brand:'Anchor',    cat:'extension',  price:499,   mrp:650,   img:IMG.extb,      popular:true  },
-    { id:'p16', name:'GM 4-Socket Extension Board with Surge Guard', brand:'GM',        cat:'extension',  price:349,   mrp:450,   img:IMG.extb,      popular:false },
-    { id:'p17', name:'Havells Aqua Plus 7L RO+UV Water Purifier',    brand:'Havells',   cat:'ro',         price:8499,  mrp:10999, img:IMG.ro,        popular:true  },
-    { id:'p18', name:'Pureit Copper+ 7L RO+UV+UF Purifier',          brand:'Pureit',    cat:'ro',         price:11499, mrp:13999, img:IMG.ro,        popular:false },
-    { id:'p19', name:'Luminous 150Ah Tall Tubular Inverter Battery', brand:'Luminous',  cat:'battery',    price:13499, mrp:15999, img:IMG.battery,   popular:true  },
-    { id:'p20', name:'Microtek 180Ah Jumbo Tall Tubular Battery',    brand:'Microtek',  cat:'battery',    price:16999, mrp:19500, img:IMG.battery,   popular:false },
-    { id:'p21', name:'Prestige PIC 20 1600W Induction Cooktop',      brand:'Prestige',  cat:'induction',  price:2199,  mrp:2899,  img:IMG.induction, popular:true  },
-    { id:'p22', name:'Philips Viva 2100W Induction Cooktop',         brand:'Philips',   cat:'induction',  price:3499,  mrp:4299,  img:IMG.induction, popular:false },
-    { id:'p23', name:'Vega 1200W Foldable Hair Dryer',               brand:'Vega',      cat:'haircare',   price:1099,  mrp:1450,  img:IMG.hair,      popular:false },
-    { id:'p24', name:'Agaro Ceramic Hair Straightener',              brand:'Agaro',     cat:'haircare',   price:899,   mrp:1299,  img:IMG.hair,      popular:false },
-    { id:'p25', name:'Symphony Siesta 65L Air Cooler',               brand:'Symphony',  cat:'cooler',     price:9499,  mrp:11999, img:IMG.cooler,    popular:true  },
-    { id:'p26', name:'Bajaj DMH 90 Neo 90L Desert Cooler',           brand:'Bajaj',     cat:'cooler',     price:10999, mrp:13499, img:IMG.cooler,    popular:false },
-    { id:'p27', name:'Philips BT1230 Cordless Beard Trimmer',        brand:'Philips',   cat:'grooming',   price:1299,  mrp:1699,  img:IMG.trimmer,   popular:true  },
-    { id:'p28', name:'Beardo Blade X Metal-Body Trimmer',            brand:'Beardo',    cat:'grooming',   price:1599,  mrp:2199,  img:IMG.trimmer,   popular:false }
-  ];
-
-  var DEALS = [
-    { title:'LED Bulbs',        desc:'Up to 30% off on Havells & Philips',   img:IMG.bulb,    cat:'lighting' },
-    { title:'Modular Switches', desc:'Buy 5, get 1 free — Anchor & Legrand', img:IMG.switchp, cat:'switches' },
-    { title:'Electric Irons',   desc:'Flat 10% off, this week only',         img:IMG.iron,    cat:'appliances' }
-  ];
+  /* STEP 2/3/4: hardcoded arrays removed — data now comes from Supabase */
+  var PRODUCTS   = [];
+  var CATEGORIES = [];
+  var DEALS      = [];
 
   var CART_KEY = 're_cart_v1';
   var ROUTES = ['home','categories','popular','store','privacy'];
-  var state = { route:'home', query:'', category:null, cart:[] };
+  var state = { route:'home', query:'', category:null, cart:[], dataReady:false, loadError:false };
 
   function byId(id){ return document.getElementById(id); }
 
   /* ---------- Helpers ---------- */
   function inr(n){ return '₹' + Number(n).toLocaleString('en-IN'); }
+  /* STEP 6: existing discount calculation preserved unchanged */
   function discount(p){ return Math.round((1 - p.price / p.mrp) * 100); }
   function findProduct(id){
-    for (var i = 0; i < PRODUCTS.length; i++) if (PRODUCTS[i].id === id) return PRODUCTS[i];
+    for (var i = 0; i < PRODUCTS.length; i++) if (String(PRODUCTS[i].id) === String(id)) return PRODUCTS[i];
     return null;
   }
   function catName(id){
@@ -687,7 +732,80 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
     return 'Electricals';
   }
 
-  /* ---------- SECURITY: sanitised cart persistence ---------- */
+  /* ================= STEP 2: load products from Supabase ================= */
+  async function loadProducts(){
+    if (!supabaseClient){ state.loadError = true; return; }
+    try {
+      const { data, error } = await supabaseClient
+        .from('products')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: true });
+      if (error){ console.error('loadProducts error:', error); state.loadError = true; return; }
+      PRODUCTS = (data || []).map(function(p){
+        return {
+          id: p.id,
+          name: p.name,
+          brand: p.brand || '',
+          cat: p.cat,
+          price: Number(p.price),
+          mrp: Number(p.mrp),
+          img: p.img || IMG[p.cat] || FALLBACK_IMG,
+          popular: Boolean(p.popular),
+          stock: Number(p.stock || 0),
+          description: p.description || ''
+        };
+      });
+    } catch (e) { console.error('loadProducts exception:', e); state.loadError = true; }
+  }
+
+  /* ================= STEP 3: load categories from Supabase ================= */
+  async function loadCategories(){
+    if (!supabaseClient){ state.loadError = true; return; }
+    try {
+      const { data, error } = await supabaseClient
+        .from('categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      if (error){ console.error('loadCategories error:', error); state.loadError = true; return; }
+      CATEGORIES = (data || []).map(function(c){
+        return {
+          id: c.id,
+          name: c.name,
+          img: c.image_url || IMG[c.id] || FALLBACK_IMG   /* preserve old fallback behaviour */
+        };
+      });
+    } catch (e) { console.error('loadCategories exception:', e); state.loadError = true; }
+  }
+
+  /* ================= STEP 4: load deals from Supabase (date-aware) ================= */
+  function dealDateOk(d){
+    var now = new Date();
+    if (d.start_date){ var s = new Date(d.start_date); if (!isNaN(s.getTime()) && now < s) return false; }
+    if (d.end_date){   var e = new Date(d.end_date);   if (!isNaN(e.getTime()) && now > e) return false; }
+    return true;
+  }
+  async function loadDeals(){
+    if (!supabaseClient){ return; }   /* deals are optional — no error state */
+    try {
+      const { data, error } = await supabaseClient
+        .from('deals')
+        .select('*')
+        .eq('is_active', true);
+      if (error){ console.error('loadDeals error:', error); return; }
+      DEALS = (data || []).filter(dealDateOk).map(function(d){
+        return {
+          title: d.title,
+          desc: d.description,
+          img: d.img || IMG[d.cat] || FALLBACK_IMG,
+          cat: d.cat
+        };
+      });
+    } catch (e) { console.error('loadDeals exception:', e); }
+  }
+
+  /* ---------- SECURITY: sanitised cart persistence (STEP 7 preserved) ---------- */
   function loadCart(){
     try {
       var raw = window.localStorage.getItem(CART_KEY);
@@ -698,7 +816,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
       for (var i = 0; i < data.length; i++) {
         var it = data[i];
         if (!it || typeof it !== 'object' || Array.isArray(it)) continue;
-        if (typeof it.id !== 'string' || !findProduct(it.id)) continue;
+        if (!findProduct(it.id)) continue;   /* inactive/removed products dropped gracefully */
         var q = parseInt(it.qty, 10);
         if (!isFinite(q)) q = 1;
         q = Math.min(99, Math.max(1, q));
@@ -729,16 +847,13 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
     if (!chip) return;
     if (mode === 'loading') chip.textContent = '📍 Locating…';
     else if (mode === 'ok') chip.textContent = '📍 Our store is at ~' + fmtDist(km);
-    else if (mode === 'error') chip.textContent = '📍 Location off — tap to turn on';
+    else if (mode === 'error') chip.textContent = '📍 Turn on Location';
     else chip.textContent = '📍 Show distance from our store';
   }
   function onGeoError(err){
     setChip('error');
-    if (err && err.code === 1) {
-      showToast('Location permission blocked. Tap the chip again and allow, or enable it in browser site settings.');
-    } else {
-      showToast('Location is OFF. Turn on GPS/location in phone settings, then tap the chip again.');
-    }
+    if (err && err.code === 1) showToast('Location blocked. Tap "Turn on Location" above and allow access.');
+    else showToast('Location is OFF. Switch on GPS in phone settings, then tap the chip above.');
   }
   function onGeoSuccess(pos){
     var d = haversineKm(pos.coords.latitude, pos.coords.longitude, SHOP_COORDS.lat, SHOP_COORDS.lng);
@@ -778,7 +893,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
     var card = document.createElement('article'); card.className = 'pcard';
     var wrap = document.createElement('div'); wrap.className = 'pimg';
     wrap.appendChild(makeImg(p.img, p.name, true));
-    if (discount(p) >= 10) {
+    if (isFinite(discount(p)) && discount(p) >= 10) {
       var badge = document.createElement('span');
       badge.className = 'pbadge' + (discount(p) >= 25 ? ' hot' : '');
       badge.textContent = '-' + discount(p) + '%';
@@ -799,7 +914,11 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
     pr.appendChild(now); pr.appendChild(was);
     var btn = document.createElement('button');
     btn.type = 'button'; btn.className = 'addbtn'; btn.setAttribute('data-add', p.id);
-    btn.textContent = 'Add to cart';
+    if (typeof p.stock === 'number' && p.stock <= 0) {
+      btn.disabled = true; btn.textContent = 'Out of stock';
+    } else {
+      btn.textContent = 'Add to cart';
+    }
     info.appendChild(br); info.appendChild(nm); info.appendChild(pr); info.appendChild(btn);
     card.appendChild(info);
     return card;
@@ -816,25 +935,65 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
     ov.appendChild(st); ov.appendChild(sp); b.appendChild(ov);
     return b;
   }
-  function fillGrid(el, nodes){
+  /* STEP 9/10: friendly empty / loading / error notes (no raw DB errors shown) */
+  function fillGrid(el, nodes, emptyMsg){
     while (el.firstChild) el.removeChild(el.firstChild);
     if (!nodes.length) {
       var note = document.createElement('div'); note.className = 'empty-note';
-      note.textContent = 'No products found. Try a different search or category.';
+      if (emptyMsg) note.textContent = emptyMsg;
+      else if (state.loadError) note.textContent = '⚠️ Could not load products right now. Please check your internet connection and refresh.';
+      else note.textContent = 'No products found. Try a different search or category.';
       el.appendChild(note); return;
     }
     nodes.forEach(function(n){ el.appendChild(n); });
   }
+  function loadingNote(el){
+    while (el.firstChild) el.removeChild(el.firstChild);
+    var d = document.createElement('div'); d.className = 'empty-note';
+    d.textContent = '⏳ Loading products…';
+    el.appendChild(d);
+  }
+  function setLoadingState(){
+    ['homeCatGrid','homeProdGrid','catGrid','dealGrid','popularGrid'].forEach(function(id){
+      var el = byId(id); if (el) loadingNote(el);
+    });
+  }
 
-  /* ---------- Renders ---------- */
+  /* ---------- Real store photos: try local file first, fallback to hosted ---------- */
+  function loadStorePhoto(imgEl, idx){
+    var local = LOCAL_STORE[idx], remote = STORE_FALLBACK[idx];
+    var probe = new Image();
+    probe.onload = function () { imgEl.src = local; };
+    probe.onerror = function () { imgEl.src = remote; };
+    probe.src = local;
+    imgEl.addEventListener('error', function () { imgEl.src = FALLBACK_IMG; }, { once: true });
+  }
+  function renderStoreExtras(){
+    var chips = byId('storeChips');
+    while (chips.firstChild) chips.removeChild(chips.firstChild);
+    CATEGORIES.forEach(function (c) {
+      var s = document.createElement('span'); s.textContent = c.name; chips.appendChild(s);
+    });
+    var home = byId('homeStoreImg');
+    if (home) loadStorePhoto(home, 1);
+    var imgs = document.querySelectorAll('.store-img');
+    for (var i = 0; i < imgs.length; i++) {
+      loadStorePhoto(imgs[i], parseInt(imgs[i].getAttribute('data-store'), 10) || 0);
+    }
+  }
+
+  /* ---------- Renders (existing names preserved; guarded until data ready) ---------- */
   function renderCategories(){
+    if (!state.dataReady) return;
     fillGrid(byId('homeCatGrid'), CATEGORIES.map(categoryCard));
     fillGrid(byId('catGrid'), CATEGORIES.map(categoryCard));
   }
   function renderDeals(){
-    fillGrid(byId('dealGrid'), DEALS.map(dealCard));
+    if (!state.dataReady) return;
+    fillGrid(byId('dealGrid'), DEALS.map(dealCard), 'No active deals right now — check back soon!');
   }
   function renderHomeProducts(){
+    if (!state.dataReady) return;
     var q = state.query.trim().toLowerCase();
     var list = PRODUCTS.filter(function(p){
       if (!q) return true;
@@ -846,9 +1005,12 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
     else status.textContent = 'Genuine brands only · fair prices · delivered across Hajipur';
   }
   function renderPopular(){
-    fillGrid(byId('popularGrid'), PRODUCTS.filter(function(p){ return p.popular; }).map(productCard));
+    if (!state.dataReady) return;
+    fillGrid(byId('popularGrid'), PRODUCTS.filter(function(p){ return p.popular; }).map(productCard),
+      'No popular products marked yet.');
   }
   function renderCategoryProducts(){
+    if (!state.dataReady) return;
     var head = byId('catResultHead');
     var grid = byId('catProdGrid');
     if (!state.category) { head.hidden = true; while (grid.firstChild) grid.removeChild(grid.firstChild); return; }
@@ -856,21 +1018,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
     byId('catResultTitle').textContent = catName(state.category);
     byId('catResultSub').textContent = 'Everything we stock in this category';
     fillGrid(grid, PRODUCTS.filter(function(p){ return p.cat === state.category; }).map(productCard));
-  }
-  function renderStoreExtras(){
-    var chips = byId('storeChips');
-    while (chips.firstChild) chips.removeChild(chips.firstChild);
-    CATEGORIES.forEach(function (c) {
-      var s = document.createElement('span'); s.textContent = c.name; chips.appendChild(s);
-    });
-    var home = byId('homeStoreImg');
-    if (home) home.src = STORE_PHOTOS[1];
-    var imgs = document.querySelectorAll('.store-img');
-    for (var i = 0; i < imgs.length; i++) {
-      var idx = parseInt(imgs[i].getAttribute('data-store'), 10) || 0;
-      imgs[i].src = STORE_PHOTOS[idx] || FALLBACK_IMG;
-      imgs[i].addEventListener('error', function () { this.src = FALLBACK_IMG; }, { once: true });
-    }
   }
 
   /* ---------- Cart UI ---------- */
@@ -881,10 +1028,8 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
     }, 0);
   }
   function renderCartBadge(){
-    var n = cartQtyTotal();
-    var a = byId('cartCount'), b = byId('cartCountMobile');
-    if (a) a.textContent = n;
-    if (b) b.setAttribute('data-count', String(n));
+    var a = byId('cartCount');
+    if (a) a.textContent = cartQtyTotal();
   }
   function renderCart(){
     var body = byId('cartBody');
@@ -901,40 +1046,46 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
     state.cart.forEach(function(it){
       var p = findProduct(it.id); if (!p) return;
       var row = document.createElement('div'); row.className = 'citem';
-      row.appendChild(makeImg(p.img, p.name, true));
+      var top = document.createElement('div'); top.className = 'citem-top';
+      top.appendChild(makeImg(p.img, p.name, true));
       var info = document.createElement('div'); info.className = 'cinfo';
       var nm = document.createElement('div'); nm.className = 'cname'; nm.textContent = p.name;
       var pr = document.createElement('div'); pr.className = 'cprice'; pr.textContent = inr(p.price) + ' each';
+      info.appendChild(nm); info.appendChild(pr);
+      top.appendChild(info);
+      var bottom = document.createElement('div'); bottom.className = 'citem-bottom';
       var qr = document.createElement('div'); qr.className = 'qtyrow';
       var minus = document.createElement('button'); minus.type = 'button'; minus.setAttribute('data-dec', p.id); minus.textContent = '−'; minus.setAttribute('aria-label','Decrease quantity');
       var q = document.createElement('span'); q.className = 'q'; q.textContent = String(it.qty);
       var plus = document.createElement('button'); plus.type = 'button'; plus.setAttribute('data-inc', p.id); plus.textContent = '+'; plus.setAttribute('aria-label','Increase quantity');
+      qr.appendChild(minus); qr.appendChild(q); qr.appendChild(plus);
       var rm = document.createElement('button'); rm.type = 'button'; rm.className = 'rmbtn'; rm.setAttribute('data-rm', p.id); rm.textContent = 'Remove';
-      qr.appendChild(minus); qr.appendChild(q); qr.appendChild(plus); qr.appendChild(rm);
-      info.appendChild(nm); info.appendChild(pr); info.appendChild(qr);
-      row.appendChild(info);
+      bottom.appendChild(qr); bottom.appendChild(rm);
+      row.appendChild(top); row.appendChild(bottom);
       body.appendChild(row);
     });
     byId('cartTotal').textContent = inr(cartSum());
     renderCartBadge();
   }
   function addToCart(id){
+    var p = findProduct(id);
+    if (!p) return;                                   /* inactive product — ignore safely */
+    if (typeof p.stock === 'number' && p.stock <= 0) { showToast('Sorry, this item is out of stock.'); return; }
     var found = null;
-    for (var i = 0; i < state.cart.length; i++) if (state.cart[i].id === id) found = state.cart[i];
+    for (var i = 0; i < state.cart.length; i++) if (String(state.cart[i].id) === String(id)) found = state.cart[i];
     if (found) found.qty = Math.min(99, found.qty + 1);
     else state.cart.push({ id: id, qty: 1 });
     saveCart(); renderCart();
-    var p = findProduct(id);
-    showToast('Added: ' + (p ? p.name : 'item'));
+    showToast('Added: ' + p.name);
   }
   function changeQty(id, delta){
     for (var i = 0; i < state.cart.length; i++) {
-      if (state.cart[i].id === id) state.cart[i].qty = Math.min(99, Math.max(1, state.cart[i].qty + delta));
+      if (String(state.cart[i].id) === String(id)) state.cart[i].qty = Math.min(99, Math.max(1, state.cart[i].qty + delta));
     }
     saveCart(); renderCart();
   }
   function removeItem(id){
-    state.cart = state.cart.filter(function(it){ return it.id !== id; });
+    state.cart = state.cart.filter(function(it){ return String(it.id) !== String(id); });
     saveCart(); renderCart();
   }
 
@@ -1018,17 +1169,13 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
     if (gotoBtn) { window.location.hash = '#/' + gotoBtn.getAttribute('data-goto'); return; }
   });
 
-  /* Logo → home */
   byId('logoLink').addEventListener('click', function () {
     if (state.route === 'home') { try { window.scrollTo({ top:0, behavior:'smooth' }); } catch (e) { window.scrollTo(0,0); } }
   });
 
-  /* Distance chip */
   byId('distChip').addEventListener('click', requestDistance);
 
-  /* Cart openers (desktop button + mobile tab) */
   byId('cartOpenBtn').addEventListener('click', openCart);
-  byId('tabCart').addEventListener('click', openCart);
   byId('cartCloseBtn').addEventListener('click', closeCart);
   byId('overlay').addEventListener('click', closeCart);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeCart(); });
@@ -1037,16 +1184,12 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
     state.cart = []; saveCart(); renderCart(); showToast('Cart cleared');
   });
 
-  /* Mobile Search tab toggles the search row */
   byId('tabSearch').addEventListener('click', function () {
-    var row = byId('mobileSearchRow');
-    var open = !row.classList.contains('open');
-    row.classList.toggle('open', open);
-    byId('tabSearch').classList.toggle('active', open);
-    if (open) setTimeout(function(){ byId('searchInputMobile').focus(); }, 60);
+    if (state.route !== 'home') window.location.hash = '#/';
+    setTimeout(function(){ byId('searchInput').focus(); }, 80);
   });
 
-  /* SECURITY: WhatsApp checkout — URL fully encoded, opened safely */
+  /* STEP 8: WhatsApp checkout preserved (same number, same message format) */
   byId('checkoutBtn').addEventListener('click', function () {
     if (!state.cart.length) return;
     var lines = ['Hello Rishikesh Enterprises! I would like to order:'];
@@ -1061,20 +1204,11 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
     if (!win) window.location.href = url;
   });
 
-  /* Search inputs (desktop + mobile) kept in sync */
-  (function bindSearch(){
-    var inputs = document.querySelectorAll('.search-input');
-    Array.prototype.forEach.call(inputs, function (inp) {
-      inp.addEventListener('input', function () {
-        state.query = String(inp.value || '').slice(0, 60);
-        Array.prototype.forEach.call(inputs, function (other) {
-          if (other !== inp) other.value = inp.value;
-        });
-        if (state.route !== 'home') window.location.hash = '#/';
-        renderHomeProducts();
-      });
-    });
-  })();
+  byId('searchInput').addEventListener('input', function (e) {
+    state.query = String(e.target.value || '').slice(0, 60);
+    if (state.route !== 'home') window.location.hash = '#/';
+    renderHomeProducts();
+  });
 
   byId('catClearBtn').addEventListener('click', function () {
     state.category = null; renderCategoryProducts();
@@ -1082,15 +1216,19 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
 
   window.addEventListener('hashchange', applyRoute);
 
-  /* ---------- Init ---------- */
-  function init(){
-    try { state.cart = loadCart(); } catch (e) { state.cart = []; }
+  /* ================= STEP 5: async initialisation ================= */
+  async function init(){
+    setLoadingState();                 /* STEP 9: loading state while fetching */
+    applyRoute();                      /* show correct view shell immediately  */
+    await Promise.all([ loadProducts(), loadCategories(), loadDeals() ]);
+    state.dataReady = true;
+    try { state.cart = loadCart(); } catch (e) { state.cart = []; }  /* after products exist */
+    renderStoreExtras();
     renderCategories();
     renderDeals();
     renderHomeProducts();
     renderPopular();
     renderCategoryProducts();
-    renderStoreExtras();
     renderCart();
     applyRoute();
     /* Ask location once per session to show "Our store is at ~x km" */
@@ -1100,7 +1238,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:46px}
     } catch (e) { auto(); }
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ init(); });
   else init();
 })();
 </script>

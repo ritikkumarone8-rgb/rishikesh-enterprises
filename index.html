@@ -5,21 +5,17 @@
 <!-- =====================================================================
   RISHIKESH ENTERPRISES — Supabase-connected customer website
   ---------------------------------------------------------------------
-  FIXES / ADDITIONS IN THIS VERSION:
-   • SEARCH FIXED & MADE USABLE:
-       - The 🔍 icon inside the search bar and the bottom "Search" tab now
-         focus the search box (with a red pulse so it's obvious).
-       - A ✕ clear button appears while typing.
-       - Search now matches product name, brand, category name AND description.
-       - Friendly messages: "No products match …" vs "No products in database
-         yet (check admin dashboard / is_active)" — plus a console.warn hint.
-   • LOGO FIXED: the "ENTERPRISES" line is now visible on ALL screen sizes
-     (it was hidden below 360px); letter-spacing tightens on small phones.
-   • NEW SPLASH INTRO: on opening, a big animated bolt logo + wordmark shows
-     while the rest of the site and Supabase data load underneath; it fades
-     out automatically when ready (max 3s). Respects reduced-motion setting.
-  EVERYTHING ELSE (Supabase loading, cart, WhatsApp checkout, store info,
-  privacy page, design, mobile layout) is unchanged.
+  FIXES IN THIS VERSION:
+   • SUPABASE CREDENTIALS PRE-FILLED (url + publishable/anon key) in the
+     CONFIG block — no manual setup needed anymore.
+   • SPLASH TIMING FIXED: the big bolt + wordmark animation now always
+     plays to completion (min ~1.7s) before fading into the website,
+     even if Supabase data loads faster. Safety cap 4s so it never sticks.
+   • SEARCH FIXED: typing now scrolls you down to the results
+     ("All products" section) so you actually see matches; pressing
+     Enter jumps to results immediately. Live result count still shows.
+  EVERYTHING ELSE (cart, WhatsApp checkout, categories, store info,
+  privacy page, mobile layout, design) is unchanged.
 ===================================================================== -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#7c0d10">
@@ -41,7 +37,7 @@ a{color:var(--brand);text-decoration:none}
 a,button{touch-action:manipulation}
 a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid rgba(210,31,38,.35);outline-offset:2px;border-radius:8px}
 
-/* ---------- Splash intro (big animated logo while site loads) ---------- */
+/* ---------- Splash intro (big animated logo; always finishes animating) ---------- */
 #splash{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;align-items:center;justify-content:center;transition:opacity .45s ease,visibility .45s ease}
 #splash.hide{opacity:0;visibility:hidden;pointer-events:none}
 .splash-inner{display:flex;flex-direction:column;align-items:center;gap:16px;padding:24px}
@@ -114,6 +110,7 @@ main{max-width:1180px;margin:0 auto;padding:24px 20px 40px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:34px 0 16px}
 .section-head:first-child{margin-top:0}
+#resultsHead{scroll-margin-top:130px}
 .eyebrow{display:block;font-size:.66rem;font-weight:800;letter-spacing:.16em;color:var(--brand);text-transform:uppercase;margin-bottom:4px}
 .section-head h2{font-size:1.35rem;letter-spacing:-.02em}
 .section-head p{color:var(--muted);font-size:.86rem;margin-top:2px}
@@ -258,6 +255,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   .cartbtn,.callbtn{width:42px;height:42px;font-size:1.1rem}
   .header-actions{gap:8px}
   .search-row{padding:0 12px 10px}
+  #resultsHead{scroll-margin-top:118px}
   .utilbar-inner{padding:6px 12px;gap:8px}
   .dist-chip{font-size:.7rem;padding:4px 10px}
   .util-right a{font-size:.74rem}
@@ -309,7 +307,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
 </head>
 <body>
 
-<!-- ================= SPLASH INTRO (big animated logo while site loads) ================= -->
+<!-- ================= SPLASH INTRO ================= -->
 <div id="splash" aria-hidden="true">
   <div class="splash-inner">
     <svg class="splash-bolt" viewBox="0 0 64 64">
@@ -368,7 +366,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     </div>
     <div class="catgrid" id="homeCatGrid"></div>
 
-    <div class="section-head">
+    <div class="section-head" id="resultsHead">
       <div><span class="eyebrow">Catalogue</span><h2>All products</h2><p id="searchStatus">Genuine brands only · fair prices · delivered across Hajipur</p></div>
     </div>
     <div class="prodgrid" id="homeProdGrid"></div>
@@ -577,19 +575,18 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
 (function () {
   'use strict';
 
-  /* ================= CONFIG — PUT YOUR SUPABASE CREDENTIALS HERE ================= */
-  var SUPABASE_URL      = 'https://hlarqmfpxcmjrkcvtgqv.supabase.co';       // e.g. https://abcd1234.supabase.co
-  var SUPABASE_ANON_KEY = 'sb_publishable_AedviRis4ENUFq8K1fQIsQ_90Dp7A-C';  // public anon key ONLY (never service_role)
-  /* =============================================================================== */
+  /* ================= CONFIG — Supabase credentials (pre-filled) =================
+     Only the public publishable/anon key is used here. Never add service_role. */
+  var SUPABASE_URL      = 'https://hlarqmfpxcmjrkcvtgqv.supabase.co';
+  var SUPABASE_ANON_KEY = 'sb_publishable_AedviRis4ENUFq8K1fQIsQ_90Dp7A-C';
+  /* ============================================================================ */
 
   var supabaseClient = (function () {
     try {
-      if (window.supabase && window.supabase.createClient &&
-          SUPABASE_URL.indexOf('YOUR_SUPABASE_URL') === -1 &&
-          SUPABASE_ANON_KEY.indexOf('YOUR_SUPABASE_ANON_KEY') === -1) {
+      if (window.supabase && window.supabase.createClient) {
         return window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       }
-      console.error('Supabase not configured: set SUPABASE_URL and SUPABASE_ANON_KEY in index.html.');
+      console.error('Supabase JS client failed to load from CDN.');
     } catch (e) { console.error('Supabase client creation failed:', e); }
     return null;
   })();
@@ -678,20 +675,27 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   var CART_KEY = 're_cart_v1';
   var ROUTES = ['home','categories','popular','store','privacy'];
   var state = { route:'home', query:'', category:null, cart:[], dataReady:false, loadError:false };
+  var searchScrolled = false;   /* scroll-to-results once per search session */
 
   function byId(id){ return document.getElementById(id); }
 
-  /* ---------- Splash ---------- */
+  /* ---------- Splash: always let the full animation finish ---------- */
+  var SPLASH_MIN_MS = 1750;     /* full bolt draw + pop + wordmark animation */
+  var splashStart = Date.now();
   var splashHidden = false;
   function hideSplash(){
     if (splashHidden) return;
     splashHidden = true;
-    var s = byId('splash');
-    if (!s) return;
-    s.classList.add('hide');
-    setTimeout(function(){ if (s.parentNode) s.parentNode.removeChild(s); }, 600);
+    var elapsed = Date.now() - splashStart;
+    var wait = Math.max(0, SPLASH_MIN_MS - elapsed);
+    setTimeout(function () {
+      var s = byId('splash');
+      if (!s) return;
+      s.classList.add('hide');
+      setTimeout(function(){ if (s.parentNode) s.parentNode.removeChild(s); }, 600);
+    }, wait);
   }
-  setTimeout(hideSplash, 3000);   /* safety: never trap the user on the splash */
+  setTimeout(hideSplash, 4000);  /* safety cap: never trap the user */
 
   function inr(n){ return '₹' + Number(n).toLocaleString('en-IN'); }
   function discount(p){ return Math.round((1 - p.price / p.mrp) * 100); }
@@ -939,7 +943,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     if (!state.dataReady) return;
     fillGrid(byId('dealGrid'), DEALS.map(dealCard), 'No active deals right now — check back soon!');
   }
-  /* SEARCH: matches name + brand + category name + description */
   function renderHomeProducts(){
     if (!state.dataReady) return;
     var q = state.query.trim().toLowerCase();
@@ -957,6 +960,13 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     var status = byId('searchStatus');
     if (q) status.textContent = list.length + ' result' + (list.length === 1 ? '' : 's') + ' for \u201C' + state.query.trim() + '\u201D';
     else status.textContent = 'Genuine brands only · fair prices · delivered across Hajipur';
+  }
+  /* SEARCH FIX: take the user to the results section */
+  function scrollToResults(){
+    var el = byId('resultsHead');
+    if (!el) return;
+    try { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    catch (e) { el.scrollIntoView(); }
   }
   function renderPopular(){
     if (!state.dataReady) return;
@@ -1079,10 +1089,8 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
   }
 
-  /* ---------- SEARCH helpers (usable everywhere) ---------- */
   function focusSearch(){
     if (state.route !== 'home') window.location.hash = '#/';
-    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
     var box = byId('searchBox');
     box.classList.add('flash');
     setTimeout(function(){ box.classList.remove('flash'); }, 900);
@@ -1139,12 +1147,12 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     state.cart = []; saveCart(); renderCart(); showToast('Cart cleared');
   });
 
-  /* Search: icon button, bottom Search tab, clear button, live input */
+  /* Search: icon, bottom tab, clear, live input + Enter */
   byId('searchFocusBtn').addEventListener('click', focusSearch);
   byId('tabSearch').addEventListener('click', focusSearch);
   byId('searchClearBtn').addEventListener('click', function () {
     var inp = byId('searchInput');
-    inp.value = ''; state.query = '';
+    inp.value = ''; state.query = ''; searchScrolled = false;
     syncClearBtn();
     renderHomeProducts();
     inp.focus({ preventScroll: true });
@@ -1154,9 +1162,19 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     syncClearBtn();
     if (state.route !== 'home') window.location.hash = '#/';
     renderHomeProducts();
+    /* take the seller/customer straight to the results once per search */
+    if (state.query.trim() && !searchScrolled) {
+      searchScrolled = true;
+      setTimeout(scrollToResults, 80);
+    }
+    if (!state.query.trim()) searchScrolled = false;
   });
   byId('searchInput').addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') { e.preventDefault(); renderHomeProducts(); }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      renderHomeProducts();
+      scrollToResults();
+    }
   });
 
   byId('catClearBtn').addEventListener('click', function () {
@@ -1182,7 +1200,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     renderCart();
     syncClearBtn();
     applyRoute();
-    hideSplash();   /* site + data ready → fade out the big logo intro */
+    hideSplash();   /* waits for the animation to finish before fading */
     var auto = function(){ setTimeout(requestDistance, 700); };
     try {
       if (!sessionStorage.getItem('re_geo_asked')) { sessionStorage.setItem('re_geo_asked', '1'); auto(); }

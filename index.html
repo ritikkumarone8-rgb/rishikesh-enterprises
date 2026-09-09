@@ -5,17 +5,14 @@
 <!-- =====================================================================
   RISHIKESH ENTERPRISES — Supabase-connected customer website
   ---------------------------------------------------------------------
-  FIXES IN THIS VERSION:
-   • SUPABASE CREDENTIALS PRE-FILLED (url + publishable/anon key) in the
-     CONFIG block — no manual setup needed anymore.
-   • SPLASH TIMING FIXED: the big bolt + wordmark animation now always
-     plays to completion (min ~1.7s) before fading into the website,
-     even if Supabase data loads faster. Safety cap 4s so it never sticks.
-   • SEARCH FIXED: typing now scrolls you down to the results
-     ("All products" section) so you actually see matches; pressing
-     Enter jumps to results immediately. Live result count still shows.
-  EVERYTHING ELSE (cart, WhatsApp checkout, categories, store info,
-  privacy page, mobile layout, design) is unchanged.
+  PREMIUM POLISH IN THIS VERSION (nothing else changed):
+   • Bottom tab bar now uses clean premium line icons (Flipkart-style):
+     Home · Categories · Search · Store — crisp SVG strokes, active = red.
+   • Search bar magnifier is now a matching premium SVG icon.
+   • Cart button uses a premium SVG cart icon (badge kept).
+   • Top red strip upgraded to a rich premium gradient with soft shine.
+  EVERYTHING ELSE (Supabase data, splash intro, search-to-results, cart,
+  WhatsApp checkout, store info, privacy page, layout) is unchanged.
 ===================================================================== -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#7c0d10">
@@ -36,8 +33,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
 a{color:var(--brand);text-decoration:none}
 a,button{touch-action:manipulation}
 a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid rgba(210,31,38,.35);outline-offset:2px;border-radius:8px}
+svg{display:block}
 
-/* ---------- Splash intro (big animated logo; always finishes animating) ---------- */
+/* ---------- Splash intro ---------- */
 #splash{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;align-items:center;justify-content:center;transition:opacity .45s ease,visibility .45s ease}
 #splash.hide{opacity:0;visibility:hidden;pointer-events:none}
 .splash-inner{display:flex;flex-direction:column;align-items:center;gap:16px;padding:24px}
@@ -58,11 +56,17 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid rgba(
   .splash-bolt circle{stroke-dashoffset:0}
 }
 
-/* ---------- Utility strip ---------- */
-.utilbar{background:linear-gradient(90deg,var(--brand-deep),var(--brand-dark));color:#fff;font-size:.78rem}
+/* ---------- Utility strip : PREMIUM GRADIENT ---------- */
+.utilbar{
+  background:
+    radial-gradient(120% 160% at 88% -30%, rgba(255,255,255,.24), rgba(255,255,255,0) 55%),
+    linear-gradient(115deg, #6f0a0e 0%, #a3151b 38%, #d21f26 72%, #f05252 100%);
+  color:#fff;font-size:.78rem;
+  box-shadow:0 2px 10px rgba(124,13,16,.25);
+}
 .utilbar-inner{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:7px 20px;flex-wrap:wrap}
-.dist-chip{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.4);color:#fff;padding:5px 13px;border-radius:999px;font-weight:700;font-size:.74rem;transition:.2s;display:inline-flex;align-items:center;gap:6px;min-height:32px}
-.dist-chip:hover{background:rgba(255,255,255,.26)}
+.dist-chip{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.42);color:#fff;padding:5px 13px;border-radius:999px;font-weight:700;font-size:.74rem;transition:.2s;display:inline-flex;align-items:center;gap:6px;min-height:32px;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.dist-chip:hover{background:rgba(255,255,255,.28)}
 .util-right{margin-left:auto;display:flex;gap:16px;align-items:center;font-weight:600}
 .util-right a{color:#fff;font-weight:800}
 @media(max-width:520px){.util-hours{display:none}}
@@ -81,26 +85,33 @@ a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid rgba(
 .mainnav a:hover{background:#fdeeee;color:var(--brand)}
 .mainnav a.active{background:var(--brand);color:#fff}
 .header-actions{display:flex;align-items:center;gap:10px;margin-left:auto;flex-shrink:0}
-.cartbtn{position:relative;display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;background:var(--ink);color:#fff;font-size:1.25rem;transition:.2s;box-shadow:var(--shadow);flex-shrink:0}
-.cartbtn:hover{background:var(--brand)}
+/* PREMIUM CART BUTTON */
+.cartbtn{position:relative;display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;background:linear-gradient(145deg,#23252b,#101114);color:#fff;transition:.2s;box-shadow:0 4px 14px rgba(16,17,20,.28), inset 0 1px 0 rgba(255,255,255,.14);flex-shrink:0}
+.cartbtn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.cartbtn:hover{background:linear-gradient(145deg,#e8434a,#a3151b)}
 .cartbtn:active{transform:scale(.94)}
-.cart-badge{position:absolute;top:-3px;right:-3px;min-width:21px;height:21px;padding:0 5px;border-radius:999px;background:var(--accent);color:#3b2300;font-size:.7rem;font-weight:800;display:grid;place-items:center;border:2px solid #fff}
+.cart-badge{position:absolute;top:-3px;right:-3px;min-width:21px;height:21px;padding:0 5px;border-radius:999px;background:linear-gradient(145deg,#ffc93c,#f59e0b);color:#3b2300;font-size:.7rem;font-weight:800;display:grid;place-items:center;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.2)}
 .callbtn{display:flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;background:var(--brand);color:#fff;font-size:1.2rem;box-shadow:var(--shadow);flex-shrink:0}
 .callbtn:active{transform:scale(.94)}
 .search-row{padding:0 20px 12px;max-width:1180px;margin:0 auto}
 .searchbox{display:flex;align-items:center;gap:8px;background:#f1efec;border:1px solid var(--line);border-radius:999px;padding:10px 14px 10px 16px;width:100%;transition:border-color .2s,box-shadow .2s}
 .searchbox.flash{border-color:var(--brand);box-shadow:0 0 0 4px rgba(210,31,38,.14)}
 .searchbox input{border:none;background:transparent;outline:none;font:inherit;font-size:16px;width:100%;color:var(--ink)}
-.search-ico{font-size:1rem;padding:4px;flex-shrink:0}
+.search-ico{color:var(--muted);padding:2px;flex-shrink:0;display:flex}
+.search-ico svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.searchbox:focus-within .search-ico{color:var(--brand)}
 .search-clear{width:28px;height:28px;border-radius:50%;background:#e2ddd6;color:#57534e;font-size:.8rem;font-weight:800;display:grid;place-items:center;flex-shrink:0}
 .search-clear:hover{background:var(--brand);color:#fff}
 
-/* ---------- Mobile bottom tab bar ---------- */
+/* ---------- Mobile bottom tab bar : PREMIUM SVG ICONS ---------- */
 .tabbar{position:fixed;bottom:0;left:0;right:0;z-index:50;display:none;border-top:1px solid var(--line);background:#fff;justify-content:space-around;padding:6px 0 calc(6px + env(safe-area-inset-bottom));box-shadow:0 -4px 20px rgba(0,0,0,.06)}
-.tab{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:54px;font-size:.72rem;font-weight:700;color:var(--muted);transition:.15s}
-.tab .ico{font-size:1.35rem;line-height:1}
+.tab{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:54px;font-size:.7rem;font-weight:700;color:var(--muted);transition:.15s}
+.tab .ico{display:flex;align-items:center;justify-content:center}
+.tab .ico svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:transform .15s ease}
 .tab:active{background:#fdeeee}
+.tab:active .ico svg{transform:scale(.92)}
 .tab.active{color:var(--brand)}
+.tab.active .ico svg{stroke-width:2.3}
 .tab.active::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:40px;height:3px;border-radius:0 0 4px 4px;background:var(--brand)}
 
 /* ---------- Layout ---------- */
@@ -252,7 +263,9 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   .logo svg{width:38px;height:38px}
   .logo-text strong{font-size:1rem}
   .logo-text span{font-size:.56rem;letter-spacing:.16em}
-  .cartbtn,.callbtn{width:42px;height:42px;font-size:1.1rem}
+  .cartbtn,.callbtn{width:42px;height:42px}
+  .cartbtn svg{width:20px;height:20px}
+  .callbtn{font-size:1.1rem}
   .header-actions{gap:8px}
   .search-row{padding:0 12px 10px}
   #resultsHead{scroll-margin-top:118px}
@@ -345,13 +358,22 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
       <a href="#/store" data-route="store">Our Store</a>
     </nav>
     <div class="header-actions">
-      <button type="button" class="cartbtn" id="cartOpenBtn" aria-label="Open cart">🛒<span class="cart-badge" id="cartCount">0</span></button>
+      <button type="button" class="cartbtn" id="cartOpenBtn" aria-label="Open cart">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="9.4" cy="20" r="1.4"/>
+          <circle cx="17.6" cy="20" r="1.4"/>
+          <path d="M3 3.8h2.1l2.3 11.4a1.6 1.6 0 0 0 1.6 1.3h8.5a1.6 1.6 0 0 0 1.6-1.2L20.8 8H6"/>
+        </svg>
+        <span class="cart-badge" id="cartCount">0</span>
+      </button>
       <a class="callbtn" href="tel:+919199156794" aria-label="Call the store">📞</a>
     </div>
   </div>
   <div class="search-row">
     <div class="searchbox" id="searchBox">
-      <button type="button" class="search-ico" id="searchFocusBtn" aria-label="Search products">🔍</button>
+      <button type="button" class="search-ico" id="searchFocusBtn" aria-label="Search products">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16.2 16.2 4.3 4.3"/></svg>
+      </button>
       <input id="searchInput" class="search-input" type="search" maxlength="60" placeholder="Search bulbs, fans, RO, batteries…" aria-label="Search products" autocomplete="off">
       <button type="button" class="search-clear" id="searchClearBtn" aria-label="Clear search" hidden>✕</button>
     </div>
@@ -546,11 +568,28 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   </div>
 </footer>
 
+<!-- ================= BOTTOM NAV : PREMIUM SVG ICONS ================= -->
 <nav class="tabbar" aria-label="Mobile primary">
-  <a class="tab" href="#/" data-route="home"><span class="ico" aria-hidden="true">🏠</span>Home</a>
-  <a class="tab" href="#/categories" data-route="categories"><span class="ico" aria-hidden="true">🗂️</span>Categories</a>
-  <button type="button" class="tab" id="tabSearch"><span class="ico" aria-hidden="true">🔍</span>Search</button>
-  <a class="tab" href="#/store" data-route="store"><span class="ico" aria-hidden="true">🏪</span>Store</a>
+  <a class="tab" href="#/" data-route="home">
+    <span class="ico" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M4 10.6 12 4l8 6.6"/><path d="M6 9.4V20h4.5v-5.6h3V20H18V9.4"/></svg>
+    </span>Home
+  </a>
+  <a class="tab" href="#/categories" data-route="categories">
+    <span class="ico" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg>
+    </span>Categories
+  </a>
+  <button type="button" class="tab" id="tabSearch">
+    <span class="ico" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16.2 16.2 4.3 4.3"/></svg>
+    </span>Search
+  </button>
+  <a class="tab" href="#/store" data-route="store">
+    <span class="ico" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M5 20V10.4"/><path d="M19 20V10.4"/><path d="M3.4 10.4 5.4 4h13.2l2 6.4"/><path d="M3.4 10.4h17.2"/><path d="M9.6 20v-5.4h4.8V20"/><path d="M3.4 20h17.2"/></svg>
+    </span>Store
+  </a>
 </nav>
 
 <div class="overlay" id="overlay"></div>
@@ -675,12 +714,12 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   var CART_KEY = 're_cart_v1';
   var ROUTES = ['home','categories','popular','store','privacy'];
   var state = { route:'home', query:'', category:null, cart:[], dataReady:false, loadError:false };
-  var searchScrolled = false;   /* scroll-to-results once per search session */
+  var searchScrolled = false;
 
   function byId(id){ return document.getElementById(id); }
 
   /* ---------- Splash: always let the full animation finish ---------- */
-  var SPLASH_MIN_MS = 1750;     /* full bolt draw + pop + wordmark animation */
+  var SPLASH_MIN_MS = 1750;
   var splashStart = Date.now();
   var splashHidden = false;
   function hideSplash(){
@@ -695,7 +734,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
       setTimeout(function(){ if (s.parentNode) s.parentNode.removeChild(s); }, 600);
     }, wait);
   }
-  setTimeout(hideSplash, 4000);  /* safety cap: never trap the user */
+  setTimeout(hideSplash, 4000);
 
   function inr(n){ return '₹' + Number(n).toLocaleString('en-IN'); }
   function discount(p){ return Math.round((1 - p.price / p.mrp) * 100); }
@@ -961,7 +1000,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     if (q) status.textContent = list.length + ' result' + (list.length === 1 ? '' : 's') + ' for \u201C' + state.query.trim() + '\u201D';
     else status.textContent = 'Genuine brands only · fair prices · delivered across Hajipur';
   }
-  /* SEARCH FIX: take the user to the results section */
   function scrollToResults(){
     var el = byId('resultsHead');
     if (!el) return;
@@ -1147,7 +1185,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     state.cart = []; saveCart(); renderCart(); showToast('Cart cleared');
   });
 
-  /* Search: icon, bottom tab, clear, live input + Enter */
   byId('searchFocusBtn').addEventListener('click', focusSearch);
   byId('tabSearch').addEventListener('click', focusSearch);
   byId('searchClearBtn').addEventListener('click', function () {
@@ -1162,7 +1199,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     syncClearBtn();
     if (state.route !== 'home') window.location.hash = '#/';
     renderHomeProducts();
-    /* take the seller/customer straight to the results once per search */
     if (state.query.trim() && !searchScrolled) {
       searchScrolled = true;
       setTimeout(scrollToResults, 80);
@@ -1200,7 +1236,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     renderCart();
     syncClearBtn();
     applyRoute();
-    hideSplash();   /* waits for the animation to finish before fading */
+    hideSplash();
     var auto = function(){ setTimeout(requestDistance, 700); };
     try {
       if (!sessionStorage.getItem('re_geo_asked')) { sessionStorage.setItem('re_geo_asked', '1'); auto(); }

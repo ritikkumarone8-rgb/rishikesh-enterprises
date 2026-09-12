@@ -5,36 +5,29 @@
 <!-- =====================================================================
   RISHIKESH ENTERPRISES — SELLER DASHBOARD (admin.html)
   ---------------------------------------------------------------------
-  RESTRUCTURED PER REQUIREMENTS (incremental update, NOT a rebuild):
-   • Old top tabs (Products / Deals) REMOVED. New LEFT SIDEBAR navigation:
-       Dashboard · Orders · Products · Inventory · Customers · Earnings
-     (Analytics / Promotions / Settings / Help intentionally NOT added.)
-   • Mobile: sidebar becomes a slide-in drawer with a ☰ header button.
-   • NEW Dashboard home (default after login): KPI cards
-       Today's Sales / Today's Orders / Products / Low Stock.
-     Sales & Orders show honest empty states ("No sales data yet",
-     "No orders yet") unless a real `orders` table exists in Supabase.
-     Products & Low Stock use REAL products-table data.
-   • Quick Actions: Add Product / Manage Products / Manage Inventory —
-     Add Product reuses the EXISTING openAdd() form (no duplicate logic).
-   • Products section = the EXISTING list moved under the sidebar item:
-     search, category chips, stats, inline price/MRP/stock editing,
-     Edit, Hide/Show, Delete, Add — all unchanged logic.
-   • NEW Inventory section built on the EXISTING products/stock data:
-     Total Products / Total Units / Low Stock / Out of Stock + list with
-     "Update Stock" that reuses the EXISTING inline stock updater.
-   • Orders / Customers / Earnings: probe Supabase for a real `orders`
-     table once. If absent/empty → clean empty states, NO fake data.
-   • Deals code & screens PRESERVED in code (renderDeals, deal form,
-     hide/show) for later reuse, but removed from primary navigation.
-   • PRESERVED: Supabase client + auth (signInWithPassword, session
-     restore, onAuthStateChange), product CRUD, validation, toasts,
-     existing visual language (red brand, cards, buttons, forms).
-   • Customer-facing website untouched.
+  PREMIUM LOOK UPDATE (this version):
+   • Premium typography via Fontsource CDN: Inter (UI) + Manrope
+     (headings, brand, KPI numbers). No Google Fonts.
+   • All emoji icons replaced with modern stroke SVG icons (sidebar,
+     logout, menu, search, quick actions, empty states).
+  EVERYTHING ELSE UNCHANGED: sidebar navigation (Dashboard / Orders /
+  Products / Inventory / Customers / Earnings), KPI dashboard with honest
+  empty states, real product/stock metrics, existing product CRUD,
+  inline price/MRP/stock editing, hide/show, delete, add/edit forms,
+  deals code preserved, Supabase auth + client, toasts, responsive
+  drawer sidebar on mobile.
 ===================================================================== -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#7c0d10">
 <title>Rishikesh Enterprises — Seller Dashboard</title>
+<!-- Premium fonts (Fontsource CDN) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/inter@latest/400.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/inter@latest/500.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/inter@latest/600.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/inter@latest/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/inter@latest/800.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/manrope@latest/700.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/fontsource/css/manrope@latest/800.css">
 <style>
 :root{
   --red:#d21f26; --red-dark:#a3151b; --red-deep:#7c0d10;
@@ -44,23 +37,36 @@
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;-webkit-tap-highlight-color:transparent}
-button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
-input,select,textarea{font-family:inherit}
+/* PREMIUM TYPOGRAPHY */
+body,button,input,select,textarea{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif}
+h1,h2,h3,.sb-brand strong,.dhead-t h1,.sec-head h2,.qa strong{font-family:'Manrope','Inter',system-ui,sans-serif;letter-spacing:-.02em}
+.kpi b{font-family:'Manrope','Inter',system-ui,sans-serif;letter-spacing:-.03em}
+body{background:var(--bg);color:var(--ink);line-height:1.5;-webkit-tap-highlight-color:transparent}
+button{cursor:pointer;border:none;background:none;color:inherit}
 a,button{touch-action:manipulation}
 img{display:block;max-width:100%}
 svg{display:block}
+/* PREMIUM ICON SIZING */
+.nico{display:inline-flex;width:20px;height:20px;flex-shrink:0}
+.nico svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.qico{display:inline-flex;width:22px;height:22px;color:var(--red)}
+.qico svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.eico svg{width:44px;height:44px;stroke:var(--muted);fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;margin:0 auto 10px}
+.menuBtn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.sb-foot .nico svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.searchbox .sico{display:flex;width:18px;height:18px;color:var(--muted);flex-shrink:0}
+.searchbox .sico svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
-/* ================= LOGIN (unchanged) ================= */
+/* ================= LOGIN ================= */
 .loginwrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
 .logincard{background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow);padding:32px 26px;width:100%;max-width:400px;text-align:center}
 .logincard .bolt{width:56px;height:56px;margin:0 auto 10px;color:var(--red)}
-.logincard h1{font-size:1.3rem}
+.logincard h1{font-size:1.3rem;font-family:'Manrope','Inter',system-ui,sans-serif}
 .logincard p.sub{color:var(--muted);font-size:.85rem;margin:4px 0 20px}
 .logincard .field{text-align:left}
 .loginerr{color:var(--danger);font-size:.82rem;font-weight:700;margin-top:10px;min-height:18px}
 
-/* ================= FORMS (existing styling, reused) ================= */
+/* ================= FORMS ================= */
 .field{display:block;margin-bottom:14px}
 .flabel{display:block;font-size:.76rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
 .field input,.field select,.field textarea{width:100%;min-height:48px;border:1.5px solid #d7dbe0;border-radius:10px;padding:11px 14px;font-size:16px;color:var(--ink);background:#fff;outline:none}
@@ -104,7 +110,6 @@ svg{display:block}
 .sb-brand small{display:block;font-size:.6rem;font-weight:800;letter-spacing:.18em;color:var(--muted)}
 .sb-nav{padding:12px 10px;display:flex;flex-direction:column;gap:4px;overflow-y:auto;flex:1}
 .sb-nav button{display:flex;align-items:center;gap:11px;width:100%;padding:11px 12px;border-radius:10px;font-weight:700;font-size:.88rem;color:#3f3f46;text-align:left;transition:.15s}
-.sb-nav button .nico{font-size:1.05rem;width:22px;text-align:center;flex-shrink:0}
 .sb-nav button:hover{background:#f6f7f9}
 .sb-nav button.active{background:#fdeeee;color:var(--red);box-shadow:inset 3px 0 0 var(--red)}
 .sb-foot{padding:12px 10px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
@@ -114,9 +119,9 @@ svg{display:block}
 .sb-overlay.show{opacity:1;pointer-events:auto}
 .dmain-wrap{flex:1;margin-left:242px;display:flex;flex-direction:column;min-width:0}
 .dhead{position:sticky;top:0;z-index:40;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:12px 20px}
-.menuBtn{display:none;width:42px;height:42px;border-radius:10px;border:1.5px solid var(--line);font-size:1.1rem;flex-shrink:0}
+.menuBtn{display:none;width:42px;height:42px;border-radius:10px;border:1.5px solid var(--line);flex-shrink:0;align-items:center;justify-content:center;color:#3f3f46}
 .dhead-t{min-width:0;flex:1}
-.dhead-t h1{font-size:1.12rem;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dhead-t h1{font-size:1.12rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dhead-t p{color:var(--muted);font-size:.76rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .logoutbtn{padding:9px 14px;border-radius:999px;border:1.5px solid var(--line);font-weight:700;font-size:.8rem;color:var(--muted);min-height:40px;flex-shrink:0}
 .logoutbtn:hover{border-color:var(--red);color:var(--red)}
@@ -125,11 +130,11 @@ svg{display:block}
 .dsec.active{display:block}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .sec-head{margin:0 0 14px}
-.sec-head h2{font-size:1.25rem;letter-spacing:-.01em}
+.sec-head h2{font-size:1.25rem}
 .sec-head p{color:var(--muted);font-size:.84rem;margin-top:2px}
 .sec-head + .sec-head{margin-top:26px}
 
-/* ================= KPI / STATS CARDS ================= */
+/* ================= KPI / STATS ================= */
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
 .kpi{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow)}
 .kpi span{display:block;font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
@@ -142,11 +147,10 @@ svg{display:block}
 .qa{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .qa button{background:#fff;border:1.5px solid var(--line);border-radius:var(--radius);padding:16px 14px;text-align:left;box-shadow:var(--shadow);transition:.15s;display:flex;flex-direction:column;gap:6px}
 .qa button:hover{border-color:var(--red)}
-.qa .qico{font-size:1.3rem}
 .qa strong{font-size:.92rem;font-weight:800}
 .qa span{font-size:.76rem;color:var(--muted);font-weight:600}
 
-/* ================= TOOLBAR / CHIPS / PRODUCT ROWS (existing) ================= */
+/* ================= TOOLBAR / CHIPS / ROWS ================= */
 .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
 .searchbox{flex:1 1 220px;display:flex;align-items:center;gap:9px;background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:11px 18px}
 .searchbox input{border:none;outline:none;background:transparent;width:100%;font-size:16px;color:var(--ink)}
@@ -184,8 +188,7 @@ svg{display:block}
 }
 .empty-note{background:#fff;border:1px dashed var(--line);border-radius:var(--radius);padding:34px;text-align:center;color:var(--muted);font-size:.9rem}
 .emptybox{background:#fff;border:1px dashed var(--line);border-radius:var(--radius);padding:48px 24px;text-align:center;color:var(--muted);box-shadow:var(--shadow)}
-.emptybox .eico{font-size:2.2rem;margin-bottom:10px}
-.emptybox strong{display:block;color:var(--ink);font-size:1rem;margin-bottom:4px}
+.emptybox strong{display:block;color:var(--ink);font-size:1rem;margin-bottom:4px;font-family:'Manrope','Inter',system-ui,sans-serif}
 .emptybox p{font-size:.85rem;max-width:420px;margin:0 auto}
 
 /* ================= INVENTORY ROWS ================= */
@@ -196,7 +199,7 @@ svg{display:block}
   .invrow .c-actions{justify-content:flex-end}
 }
 
-/* ================= TOAST (existing) ================= */
+/* ================= TOAST ================= */
 .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:999px;font-size:.85rem;font-weight:700;opacity:0;pointer-events:none;transition:.3s;z-index:120;box-shadow:var(--shadow);max-width:90vw;text-align:center}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 
@@ -205,7 +208,7 @@ svg{display:block}
   .sidebar{transform:translateX(-100%);box-shadow:0 0 40px rgba(0,0,0,.18)}
   .sidebar.open{transform:none}
   .dmain-wrap{margin-left:0}
-  .menuBtn{display:inline-flex;align-items:center;justify-content:center}
+  .menuBtn{display:inline-flex}
   .dhead{padding:10px 12px}
   .logoutbtn{display:none}
   .dmain{padding:14px 12px 30px}
@@ -217,7 +220,7 @@ svg{display:block}
 </head>
 <body>
 
-<!-- ================= LOGIN (unchanged) ================= -->
+<!-- ================= LOGIN ================= -->
 <div class="loginwrap" id="viewLogin">
   <form class="logincard" id="loginForm" novalidate>
     <svg class="bolt" viewBox="0 0 64 64" aria-hidden="true">
@@ -242,7 +245,7 @@ svg{display:block}
 <div id="viewApp" hidden>
   <div class="sb-overlay" id="sbOverlay"></div>
 
-  <!-- LEFT SIDEBAR -->
+  <!-- LEFT SIDEBAR (premium SVG icons) -->
   <aside class="sidebar" id="sidebar" aria-label="Seller navigation">
     <div class="sb-brand">
       <svg viewBox="0 0 64 64" aria-hidden="true">
@@ -252,22 +255,22 @@ svg{display:block}
       <div class="nb"><strong>Rishikesh Enterprises</strong><small>SELLER</small></div>
     </div>
     <nav class="sb-nav" id="sbNav">
-      <button type="button" data-section="dashboard" class="active"><span class="nico">🏠</span>Dashboard</button>
-      <button type="button" data-section="orders"><span class="nico">📦</span>Orders</button>
-      <button type="button" data-section="products"><span class="nico">🛍️</span>Products</button>
-      <button type="button" data-section="inventory"><span class="nico">📊</span>Inventory</button>
-      <button type="button" data-section="customers"><span class="nico">👥</span>Customers</button>
-      <button type="button" data-section="earnings"><span class="nico">💰</span>Earnings</button>
+      <button type="button" data-section="dashboard" class="active"><span class="nico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>Dashboard</button>
+      <button type="button" data-section="orders"><span class="nico"><svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg></span>Orders</button>
+      <button type="button" data-section="products"><span class="nico"><svg viewBox="0 0 24 24"><path d="M6 7h12l1.2 13H4.8L6 7z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/></svg></span>Products</button>
+      <button type="button" data-section="inventory"><span class="nico"><svg viewBox="0 0 24 24"><path d="M4 20v-8"/><path d="M10 20V4"/><path d="M16 20v-5"/><path d="M22 20H2"/></svg></span>Inventory</button>
+      <button type="button" data-section="customers"><span class="nico"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M17.8 13.6a6.5 6.5 0 0 1 3.7 6.4"/></svg></span>Customers</button>
+      <button type="button" data-section="earnings"><span class="nico"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 12h.01"/><path d="M18 12h.01"/></svg></span>Earnings</button>
     </nav>
     <div class="sb-foot">
-      <button type="button" id="sbLogout"><span class="nico">⎋</span>Logout</button>
+      <button type="button" id="sbLogout"><span class="nico"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></span>Logout</button>
     </div>
   </aside>
 
   <div class="dmain-wrap">
     <!-- TOP HEADER -->
     <header class="dhead">
-      <button type="button" class="menuBtn" id="menuBtn" aria-label="Open menu">☰</button>
+      <button type="button" class="menuBtn" id="menuBtn" aria-label="Open menu"><svg viewBox="0 0 24 24"><path d="M4 7h16"/><path d="M4 12h16"/><path d="M4 17h16"/></svg></button>
       <div class="dhead-t">
         <h1 id="pageTitle">Dashboard</h1>
         <p id="pageGreet">Welcome, Rishikesh Enterprises</p>
@@ -288,9 +291,9 @@ svg{display:block}
           <h2>Quick Actions</h2>
         </div>
         <div class="qa">
-          <button type="button" data-qa="add"><span class="qico">➕</span><strong>Add Product</strong><span>Create a new product listing</span></button>
-          <button type="button" data-qa="products"><span class="qico">🛍️</span><strong>Manage Products</strong><span>Edit price, MRP, stock, visibility</span></button>
-          <button type="button" data-qa="inventory"><span class="qico">📊</span><strong>Manage Inventory</strong><span>Review and update stock levels</span></button>
+          <button type="button" data-qa="add"><span class="qico"><svg viewBox="0 0 24 24"><path d="M12 5v14"/><path d="M5 12h14"/></svg></span><strong>Add Product</strong><span>Create a new product listing</span></button>
+          <button type="button" data-qa="products"><span class="qico"><svg viewBox="0 0 24 24"><path d="M6 7h12l1.2 13H4.8L6 7z"/><path d="M9 10V6a3 3 0 0 1 6 0v4"/></svg></span><strong>Manage Products</strong><span>Edit price, MRP, stock, visibility</span></button>
+          <button type="button" data-qa="inventory"><span class="qico"><svg viewBox="0 0 24 24"><path d="M4 20v-8"/><path d="M10 20V4"/><path d="M16 20v-5"/><path d="M22 20H2"/></svg></span><strong>Manage Inventory</strong><span>Review and update stock levels</span></button>
         </div>
       </section>
 
@@ -303,14 +306,14 @@ svg{display:block}
         <div id="ordersBox"></div>
       </section>
 
-      <!-- ========== PRODUCTS (existing functionality moved here) ========== -->
+      <!-- ========== PRODUCTS ========== -->
       <section class="dsec" id="sec-products" aria-label="Products">
         <div class="sec-head">
           <h2>Products</h2>
           <p>Manage all products in your store.</p>
         </div>
         <div class="toolbar">
-          <div class="searchbox">🔍<input id="searchInput" type="search" placeholder="Search products…" autocomplete="off" maxlength="60" aria-label="Search products"></div>
+          <div class="searchbox"><span class="sico"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16.2 16.2 4.3 4.3"/></svg></span><input id="searchInput" type="search" placeholder="Search products…" autocomplete="off" maxlength="60" aria-label="Search products"></div>
           <button type="button" class="btn" id="addBtn">+ Add Product</button>
         </div>
         <div class="kpis" id="statsBox"></div>
@@ -346,7 +349,7 @@ svg{display:block}
         <div id="earningsBox"></div>
       </section>
 
-      <!-- ========== EDIT PRODUCT (existing form, unchanged logic) ========== -->
+      <!-- ========== EDIT PRODUCT ========== -->
       <section class="dsec" id="sec-edit" aria-label="Edit product">
         <button type="button" class="backbtn" data-back="products">← Back to Products</button>
         <div class="panel">
@@ -376,7 +379,7 @@ svg{display:block}
         </div>
       </section>
 
-      <!-- ========== ADD PRODUCT (existing form, unchanged logic) ========== -->
+      <!-- ========== ADD PRODUCT ========== -->
       <section class="dsec" id="sec-add" aria-label="Add product">
         <button type="button" class="backbtn" data-back="products">← Back to Products</button>
         <div class="panel">
@@ -460,13 +463,12 @@ svg{display:block}
     section: 'dashboard',
     query: '', cat: 'all',
     products: [], categories: [], deals: [],
-    orders: null,            /* null = no orders table / not available yet */
+    orders: null,            /* null = no orders table / no order data yet */
     editingId: null, dealEditingId: null
   };
 
   function byId(id){ return document.getElementById(id); }
   function inr(n){ return '₹' + Number(n).toLocaleString('en-IN'); }
-  function normName(s){ return String(s == null ? '' : s).toLowerCase().trim(); }
   function findProduct(id){
     for (var i = 0; i < state.products.length; i++) if (String(state.products[i].id) === String(id)) return state.products[i];
     return null;
@@ -477,7 +479,14 @@ svg{display:block}
   }
   var LOW_STOCK = 5;   /* existing low-stock rule used across the app */
 
-  /* ---------- Toast (existing) ---------- */
+  /* ---------- Premium SVG icons for empty states ---------- */
+  var ICON_SVG = {
+    '📦': '<svg viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>',
+    '👥': '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8"/><path d="M17.8 13.6a6.5 6.5 0 0 1 3.7 6.4"/></svg>',
+    '💰': '<svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 12h.01"/><path d="M18 12h.01"/></svg>'
+  };
+
+  /* ---------- Toast ---------- */
   var toastTimer = null;
   function toast(msg){
     var t = byId('toast');
@@ -487,7 +496,7 @@ svg{display:block}
     toastTimer = setTimeout(function(){ t.classList.remove('show'); }, 2400);
   }
 
-  /* ---------- Supabase loaders (existing) ---------- */
+  /* ---------- Supabase loaders ---------- */
   async function loadProducts(){
     if (!supabaseClient) return;
     try {
@@ -520,7 +529,7 @@ svg{display:block}
       state.deals = data || [];
     } catch (e) { console.error('loadDeals exception:', e); }
   }
-  /* Inspect schema: does a real orders table exist? (no fake data ever) */
+  /* Inspect schema: does a real orders table exist? (never fabricate data) */
   async function loadOrders(){
     state.orders = null;
     if (!supabaseClient) return;
@@ -556,7 +565,7 @@ svg{display:block}
   function closeSidebar(){ byId('sidebar').classList.remove('open'); byId('sbOverlay').classList.remove('show'); }
 
   /* ---------- Dashboard KPIs (real product data; honest order states) ---------- */
-  function todayKey(){ var d = new Date(); return d.toISOString().slice(0, 10); }
+  function todayKey(){ return new Date().toISOString().slice(0, 10); }
   function orderAmount(o){
     var v = o.amount != null ? o.amount : (o.total != null ? o.total : (o.grand_total != null ? o.grand_total : null));
     v = Number(v); return isFinite(v) ? v : 0;
@@ -567,20 +576,18 @@ svg{display:block}
     box.innerHTML = '';
     var total = state.products.length;
     var active = state.products.filter(function(p){ return p.is_active; }).length;
-    var low = state.products.filter(function(p){ return p.is_active && p.stock > 0 && p.stock <= LOW_STOCK; }).length
-            + state.products.filter(function(p){ return p.is_active && p.stock <= 0; }).length;
+    var low = state.products.filter(function(p){ return p.is_active && p.stock <= LOW_STOCK; }).length;
     var hasOrders = Array.isArray(state.orders) && state.orders.length > 0;
     var tk = todayKey();
     var todayOrders = hasOrders ? state.orders.filter(function(o){ return orderDate(o) === tk; }) : [];
     var todaySales = hasOrders ? todayOrders.reduce(function(s, o){ return s + orderAmount(o); }, 0) : 0;
 
-    var cards = [
+    [
       { label: "Today's Sales", value: hasOrders ? inr(todaySales) : '₹0', note: hasOrders ? (todayOrders.length + ' order(s) today') : 'No sales data yet', cls: '' },
       { label: "Today's Orders", value: String(hasOrders ? todayOrders.length : 0), note: hasOrders ? 'From your orders table' : 'No orders yet', cls: '' },
       { label: 'Products', value: String(total), note: active + ' active', cls: 'ok' },
       { label: 'Low Stock', value: String(low), note: low > 0 ? 'Needs attention' : 'All stocked well', cls: low > 0 ? 'warn' : '' }
-    ];
-    cards.forEach(function (c) {
+    ].forEach(function (c) {
       var d = document.createElement('div'); d.className = 'kpi' + (c.cls ? ' ' + c.cls : '');
       var s = document.createElement('span'); s.textContent = c.label;
       var b = document.createElement('b'); b.textContent = c.value;
@@ -590,7 +597,7 @@ svg{display:block}
     });
   }
 
-  /* ---------- Products stats / chips / list (existing logic) ---------- */
+  /* ---------- Products stats / chips / list ---------- */
   function renderStats(){
     var box = byId('statsBox');
     box.innerHTML = '';
@@ -643,7 +650,7 @@ svg{display:block}
     nb.appendChild(nm); nb.appendChild(sub);
     c1.appendChild(nb); row.appendChild(c1);
 
-    [['price', 'Price', p.mrp != null ? inr(p.price) : inr(p.price), false],
+    [['price', 'Price', inr(p.price), false],
      ['mrp', 'MRP', p.mrp == null ? '—' : inr(p.mrp), false],
      ['stock', 'Stock', String(p.stock), p.stock <= LOW_STOCK]].forEach(function (cfg) {
       var c = document.createElement('div'); c.className = 'cell';
@@ -686,7 +693,7 @@ svg{display:block}
     items.forEach(function (p) { list.appendChild(productRow(p)); });
   }
 
-  /* ---------- Inventory (built on existing products/stock) ---------- */
+  /* ---------- Inventory (existing products/stock data) ---------- */
   function stockStatus(p){
     if (p.stock <= 0) return { txt: 'Out of Stock', cls: 'bad' };
     if (p.stock <= LOW_STOCK) return { txt: 'Low Stock', cls: 'warn' };
@@ -759,7 +766,8 @@ svg{display:block}
   /* ---------- Orders / Customers / Earnings (real data only) ---------- */
   function emptyBox(icon, title, msg){
     var d = document.createElement('div'); d.className = 'emptybox';
-    var i = document.createElement('div'); i.className = 'eico'; i.textContent = icon;
+    var i = document.createElement('div'); i.className = 'eico';
+    i.innerHTML = ICON_SVG[icon] || ICON_SVG['📦'];
     var s = document.createElement('strong'); s.textContent = title;
     var p = document.createElement('p'); p.textContent = msg;
     d.appendChild(i); d.appendChild(s); d.appendChild(p);
@@ -785,7 +793,7 @@ svg{display:block}
       ci.textContent = (Array.isArray(o.items) ? o.items.length : (o.item_count != null ? o.item_count : '—')) + ' items';
       row.appendChild(ci);
       var ca = document.createElement('div'); ca.className = 'cell';
-      ca.innerHTML = ''; var av = document.createElement('strong'); av.textContent = inr(orderAmount(o)); ca.appendChild(av);
+      var av = document.createElement('strong'); av.textContent = inr(orderAmount(o)); ca.appendChild(av);
       row.appendChild(ca);
       var cs = document.createElement('div'); cs.className = 'cell';
       var st = document.createElement('span'); st.className = 'status'; st.textContent = String(o.status || 'new');
@@ -838,7 +846,7 @@ svg{display:block}
     box.appendChild(kpi);
   }
 
-  /* ---------- Deals (preserved, unchanged logic) ---------- */
+  /* ---------- Deals (preserved) ---------- */
   function dealRow(d){
     var row = document.createElement('div'); row.className = 'prow';
     var c1 = document.createElement('div'); c1.className = 'cell c-name';
@@ -903,8 +911,7 @@ svg{display:block}
     } catch (e) { console.error('updateProduct exception:', e); toast('Could not update product. Please try again.'); return false; }
   }
 
-  /* ---------- Inline editing (existing engine) ---------- */
-  var inline = { dragging: false };
+  /* ---------- Inline editing ---------- */
   function startInline(btn){
     var id = btn.getAttribute('data-id');
     var field = btn.getAttribute('data-inline');
@@ -943,7 +950,7 @@ svg{display:block}
     }
   }
 
-  /* ---------- Edit / Add product (existing forms & validation) ---------- */
+  /* ---------- Edit / Add product ---------- */
   function openEdit(id){
     var p = findProduct(id); if (!p) return;
     state.editingId = id;
@@ -1026,7 +1033,7 @@ svg{display:block}
     showSection('dealform');
   }
 
-  /* ---------- Auth (existing) ---------- */
+  /* ---------- Auth ---------- */
   function showLogin(){
     byId('viewApp').hidden = true;
     byId('viewLogin').style.display = 'flex';
@@ -1252,7 +1259,7 @@ svg{display:block}
     btn.disabled = false; btn.textContent = '💾 Save Deal';
   });
 
-  /* ---------- Init: session restore (existing behaviour) ---------- */
+  /* ---------- Init: session restore ---------- */
   async function init(){
     if (!supabaseClient) {
       byId('loginNote').textContent = 'Supabase is not configured in this file.';

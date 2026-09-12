@@ -3,39 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <!-- =====================================================================
-  RISHIKESH ENTERPRISES — Supabase-connected customer website
+  RISHIKESH ENTERPRISES — customer website (Supabase-connected)
   ---------------------------------------------------------------------
-  HERO BRAND CAROUSEL — REBUILT FLIPKART-STYLE (this version):
-   • Full-width hero slider directly under the header (covers most of the
-     screen on mobile, big rounded banner on desktop).
-   • Auto-swipes to the next brand EVERY 3 SECONDS.
-   • Flipkart-like dot pager (active dot = wide pill); dots are tappable.
-   • Swipe / mouse-drag supported; auto-play pauses while dragging and
-     resumes automatically; pauses off-screen / hidden tab.
-   • Seamless infinite loop (edge clones + instant reposition, no jump).
-   • NO "View Products" button on cards — tapping anywhere on the banner
-     opens that brand's products (#/brand/<slug>) using existing cards.
-   • New premium banner art with real electrical components (fan, bulbs,
-     switches, wires, MCBs…) per brand. Curated map below is used first;
-     brands NOT in the map use brands.banner_url from Supabase; missing
-     image → graceful gradient fallback with brand initial.
-   • OPTIONAL SQL to sync these banners into your DB (source of truth):
-       update public.brands b set banner_url = v.url, logo_url = v.url
-       from (values
-        ('Havells','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1e8375e45-29e3-4681-8b46-8c2f40b64368.png'),
-        ('Polycab','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/11c78f9e0-11fd-43bb-b4d9-f87ea831fa4b.png'),
-        ('Bajaj','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1ece7b5cf-41b2-4336-ba55-6d003556f3c3.png'),
-        ('Crabtree','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1c0ad07dc-5058-4bcd-99e2-b58fe7c6cef4.png'),
-        ('Anchor','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1bb381cc3-9424-4bff-8930-bf8f7439fef9.png'),
-        ('Legrand','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/169bb26f6-589c-40b8-98b2-9056e54562aa.png'),
-        ('Philips','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/13621755f-85ad-47c9-ac9e-81d9c80edd1f.png'),
-        ('Crompton','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/17abfc626-3f7f-4107-a30d-5aae7519e661.png'),
-        ('Orient','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1ff1383c3-744e-4d44-8759-da6c4a3a4bdc.png'),
-        ('Finolex','https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1f9c47a1f-0b07-4f3d-b860-6936c6e1fda5.png')
-       ) as v(name,url)
-       where b.name = v.name;
-  EVERYTHING ELSE (popular row, categories, all products, brand pages,
-  cart, WhatsApp checkout, search, splash, store, privacy) UNCHANGED.
+  CHANGES IN THIS VERSION (per "User-Side Product Page & Cart Updates"):
+  A. DEDICATED PRODUCT LISTING PAGE: new route  #/products?category=…&search=…
+     with back button, title, own search bar, product count and the
+     EXISTING product-card design + add-to-cart.
+  B. CATEGORY → LISTING PAGE: tapping any category (home or categories
+     page) or a deal now opens #/products?category=<id> showing ONLY that
+     category's active products.
+  C. HOMEPAGE SEARCH → LISTING PAGE: typing in the home search navigates
+     (debounced) to #/products?search=… with NO category restriction.
+  D. SEARCH INSIDE LISTING PAGE: client-side, case-insensitive over name,
+     brand and description — no Supabase request per keystroke.
+  E. CATEGORY + SEARCH COMBINED: both filters apply together; clearing one
+     keeps the other; URL always reflects state (refresh/back/forward/
+     share all work via the existing hash routing, no new library).
+  F+G. QUANTITY ON PRODUCT CARDS: after adding, the card button becomes
+     [ − ] n [ + ] using the EXISTING localStorage cart; decreasing to 0
+     removes the item and restores "Add to cart"; card, cart and header
+     badge stay synced everywhere without reloads.
+  H. ORDER ON WHATSAPP: kept the reliable link-click opener; message now
+     exactly in the requested readable format (name × qty — line total,
+     Total, confirmation line), fully encodeURIComponent-safe.
+  I. CART SCROLLING FIXED: drawer body now scrolls independently
+     (min-height:0 + overflow-y:auto + overscroll-behavior:contain) with a
+     fixed total/checkout footer — works with touch and mouse wheel.
+  EMPTY STATES: "No products found. Try searching for a different product
+  or brand." / "No products available in this category yet."
+  UNCHANGED: hero brand carousel, brand pages, popular row, deals,
+  categories browser, store page, privacy, splash, admin compatibility,
+  Supabase loaders, cart storage key, WhatsApp number, design language.
 ===================================================================== -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#7c0d10">
@@ -79,7 +77,7 @@ svg{display:block}
   .splash-bolt circle{stroke-dashoffset:0}
 }
 
-/* ---------- Utility strip : premium gradient ---------- */
+/* ---------- Utility strip ---------- */
 .utilbar{
   background:
     radial-gradient(120% 160% at 88% -30%, rgba(255,255,255,.24), rgba(255,255,255,0) 55%),
@@ -143,15 +141,15 @@ main{max-width:1180px;margin:0 auto;padding:24px 20px 40px}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:34px 0 16px}
 .section-head:first-child{margin-top:0}
-#resultsHead{scroll-margin-top:130px}
 .eyebrow{display:block;font-size:.66rem;font-weight:800;letter-spacing:.16em;color:var(--brand);text-transform:uppercase;margin-bottom:4px}
 .section-head h2{font-size:1.35rem;letter-spacing:-.02em}
 .section-head p{color:var(--muted);font-size:.86rem;margin-top:2px}
 .linkbtn{font-weight:700;font-size:.86rem;color:var(--brand)}
 .backbtn{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:.86rem;color:var(--muted);margin:0 0 10px;min-height:38px}
 .backbtn:hover{color:var(--brand)}
+.listing-search{padding:0 0 14px}
 
-/* ---------- HERO BRAND CAROUSEL (Flipkart-style full-width slider) ---------- */
+/* ---------- HERO BRAND CAROUSEL ---------- */
 .brandhero{margin:2px 0 10px}
 .bh-head{margin:0 0 10px}
 .bcarousel{position:relative;overflow:hidden;border-radius:18px;touch-action:pan-y;box-shadow:var(--shadow);background:#fff;cursor:grab}
@@ -167,7 +165,7 @@ main{max-width:1180px;margin:0 auto;padding:24px 20px 40px}
 .bdot{width:7px;height:7px;border-radius:99px;background:rgba(255,255,255,.55);transition:width .25s,background .25s;padding:0}
 .bdot.active{width:22px;background:#fff}
 
-/* ---------- Horizontal product row (Popular on home) ---------- */
+/* ---------- Horizontal product row ---------- */
 .hscroll{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x proximity;padding:4px 2px 12px;-webkit-overflow-scrolling:touch}
 .hscroll::-webkit-scrollbar{height:6px}
 .hscroll::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px}
@@ -182,7 +180,7 @@ main{max-width:1180px;margin:0 auto;padding:24px 20px 40px}
 .catcard .cat-label strong{display:block;font-size:.9rem}
 .catcard .cat-label span{font-size:.74rem;color:var(--muted)}
 
-/* ---------- Product grid ---------- */
+/* ---------- Product grid & cards ---------- */
 .prodgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:16px}
 .pcard{background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;border:1px solid var(--line)}
 .pcard .pimg{position:relative;background:#f4f2f0}
@@ -196,10 +194,16 @@ main{max-width:1180px;margin:0 auto;padding:24px 20px 40px}
 .pprice{margin-top:auto;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .pprice .now{font-size:1.05rem;font-weight:800;color:var(--brand-dark)}
 .pprice .was{font-size:.8rem;color:var(--muted);text-decoration:line-through}
-.addbtn{margin-top:8px;background:var(--brand);color:#fff;font-weight:700;font-size:.85rem;padding:11px;border-radius:10px;min-height:42px;transition:.2s}
-.addbtn:hover{background:var(--brand-dark)}
-.addbtn:active{transform:scale(.97)}
-.addbtn:disabled{background:#9ca3af;cursor:not-allowed;transform:none}
+/* card cart controls: Add button OR [− n +] stepper */
+.pctrl{margin-top:8px}
+.pctrl .addbtn{margin-top:0;background:var(--brand);color:#fff;font-weight:700;font-size:.85rem;padding:11px;border-radius:10px;min-height:42px;width:100%;transition:.2s}
+.pctrl .addbtn:hover{background:var(--brand-dark)}
+.pctrl .addbtn:active{transform:scale(.97)}
+.pctrl .addbtn:disabled{background:#9ca3af;cursor:not-allowed;transform:none}
+.qtybox{display:flex;align-items:stretch;border:1.5px solid var(--brand);border-radius:10px;overflow:hidden;height:42px;background:#fff}
+.qtybox .qbtn{width:46px;flex-shrink:0;background:#fdeeee;color:var(--brand);font-weight:800;font-size:1.1rem;transition:.15s}
+.qtybox .qbtn:hover{background:var(--brand);color:#fff}
+.qtybox .qval{flex:1;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.95rem;color:var(--ink)}
 .empty-note{background:#fff;border:1px dashed var(--line);border-radius:var(--radius);padding:34px;text-align:center;color:var(--muted);font-size:.92rem;grid-column:1/-1}
 
 /* ---------- Deals ---------- */
@@ -265,17 +269,21 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
 .foot-bottom{border-top:1px solid #2b1718;padding:16px 20px;text-align:center;font-size:.78rem;color:#b3a0a0}
 .foot-bottom a{color:#f3b0b2}
 
-/* ---------- Cart drawer ---------- */
+/* ---------- Cart drawer (SCROLL FIXED) ---------- */
 .overlay{position:fixed;inset:0;background:rgba(20,5,5,.5);opacity:0;pointer-events:none;transition:opacity .3s;z-index:90}
 .overlay.show{opacity:1;pointer-events:auto}
-.drawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,100%);background:#fff;z-index:100;transform:translateX(102%);transition:transform .35s cubic-bezier(.22,.9,.3,1);display:flex;flex-direction:column;box-shadow:-12px 0 40px rgba(20,5,5,.25)}
+.drawer{position:fixed;top:0;right:0;bottom:0;height:100%;width:min(420px,100%);background:#fff;z-index:100;transform:translateX(102%);transition:transform .35s cubic-bezier(.22,.9,.3,1);display:flex;flex-direction:column;box-shadow:-12px 0 40px rgba(20,5,5,.25)}
 .drawer.open{transform:none}
-.drawer-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line)}
+.drawer-head{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--line)}
 .drawer-head h2{font-size:1.1rem}
 .closebtn{width:38px;height:38px;border-radius:10px;background:#f4f2f0;font-size:1rem;font-weight:700}
 .closebtn:hover{background:#e7e2dd}
-.drawer-body{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px;-webkit-overflow-scrolling:touch}
-.citem{display:flex;flex-direction:column;gap:10px;border:1px solid var(--line);border-radius:14px;padding:12px;background:#faf9f8;overflow:hidden}
+.drawer-body{
+  flex:1 1 auto; min-height:0; overflow-y:auto;
+  -webkit-overflow-scrolling:touch; overscroll-behavior:contain; touch-action:pan-y;
+  padding:16px 20px; display:flex; flex-direction:column; gap:14px;
+}
+.citem{display:flex;flex-direction:column;gap:10px;border:1px solid var(--line);border-radius:14px;padding:12px;background:#faf9f8;overflow:hidden;flex-shrink:0}
 .citem-top{display:flex;gap:12px;align-items:center;min-width:0}
 .citem img{width:60px;height:60px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#fff;border:1px solid var(--line)}
 .citem .cinfo{flex:1;min-width:0}
@@ -288,7 +296,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
 .qtyrow .q{font-weight:800;font-size:.95rem;min-width:20px;text-align:center}
 .rmbtn{color:var(--danger);font-size:.76rem;font-weight:800;padding:8px 14px;border-radius:9px;background:#fee2e2;white-space:nowrap}
 .rmbtn:hover{background:var(--danger);color:#fff}
-.drawer-foot{border-top:1px solid var(--line);padding:18px 20px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;background:#fff}
+.drawer-foot{flex-shrink:0;border-top:1px solid var(--line);padding:18px 20px calc(18px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px;background:#fff}
 .totalrow{display:flex;justify-content:space-between;font-weight:800;font-size:1.05rem}
 .totalrow span:first-child{color:var(--muted);font-weight:600}
 .wabtn{background:#22c55e;color:#052e16;font-weight:800;padding:14px;border-radius:12px;font-size:.95rem;min-height:48px}
@@ -314,7 +322,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   .callbtn{font-size:1.1rem}
   .header-actions{gap:8px}
   .search-row{padding:0 12px 10px}
-  #resultsHead{scroll-margin-top:118px}
   .utilbar-inner{padding:6px 12px;gap:8px}
   .dist-chip{font-size:.7rem;padding:4px 10px}
   .util-right a{font-size:.74rem}
@@ -339,7 +346,9 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   .pname{font-size:.84rem}
   .pprice .now{font-size:.95rem}
   .pprice .was{font-size:.72rem}
-  .addbtn{font-size:.8rem;padding:9px;min-height:40px}
+  .pctrl .addbtn{font-size:.8rem;padding:9px;min-height:40px}
+  .qtybox{height:40px}
+  .qtybox .qbtn{width:40px}
   .pbadge{top:7px;left:7px;font-size:.62rem;padding:3px 7px}
   .pbadge.pop{left:auto;right:7px}
   .dealgrid{grid-template-columns:1fr;gap:12px}
@@ -435,7 +444,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   <!-- ================= HOME ================= -->
   <section class="view" id="view-home" aria-label="Home">
 
-    <!-- 1) HERO BRAND CAROUSEL (full-width, 3s auto-swipe, dots, swipe) -->
     <section class="brandhero" id="brandHero" aria-label="Popular brands">
       <div class="bh-head section-head" style="margin:0 0 10px">
         <div><span class="eyebrow">Top Brands</span><h2>Shop by Brand</h2></div>
@@ -446,7 +454,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
       </div>
     </section>
 
-    <!-- 2) POPULAR PRODUCTS -->
     <section id="homePopularSection" aria-label="Popular products">
       <div class="section-head">
         <div><span class="eyebrow">Bestsellers</span><h2>Popular Products</h2><p>Loved by customers across Hajipur</p></div>
@@ -455,20 +462,17 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
       <div class="hscroll" id="homePopularGrid"></div>
     </section>
 
-    <!-- 3) CATEGORIES -->
     <div class="section-head">
       <div><span class="eyebrow">Shop</span><h2>Shop by category</h2><p>Tap a category to see everything in it</p></div>
       <button type="button" class="linkbtn" data-goto="categories">View all →</button>
     </div>
     <div class="catgrid" id="homeCatGrid"></div>
 
-    <!-- 4) ALL PRODUCTS -->
-    <div class="section-head" id="resultsHead">
-      <div><span class="eyebrow">Catalogue</span><h2>All products</h2><p id="searchStatus">Genuine brands only · fair prices · delivered across Hajipur</p></div>
+    <div class="section-head">
+      <div><span class="eyebrow">Catalogue</span><h2>All products</h2><p>Genuine brands only · fair prices · delivered across Hajipur</p></div>
     </div>
     <div class="prodgrid" id="homeProdGrid"></div>
 
-    <!-- 5) STORE BANNER -->
     <div class="storebanner">
       <button type="button" class="sb-media" data-goto="store" aria-label="View our store page">
         <img id="homeStoreImg" alt="Rishikesh Enterprises storefront at Yadav Chowk, Hajipur" loading="lazy" decoding="async">
@@ -485,6 +489,24 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     </div>
   </section>
 
+  <!-- ================= DEDICATED PRODUCT LISTING PAGE ================= -->
+  <section class="view" id="view-products" aria-label="Product listing">
+    <button type="button" class="backbtn" id="listingBack">← Back</button>
+    <div class="section-head" style="margin-top:0">
+      <div><span class="eyebrow" id="listingEyebrow">Catalogue</span><h2 id="listingTitle">All Products</h2><p id="listingSub"></p></div>
+    </div>
+    <div class="search-row listing-search">
+      <div class="searchbox" id="listingSearchBox">
+        <button type="button" class="search-ico" id="listingSearchIco" aria-label="Search in results">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16.2 16.2 4.3 4.3"/></svg>
+        </button>
+        <input id="listingSearchInput" class="search-input" type="search" maxlength="60" placeholder="Search products…" aria-label="Search products in listing" autocomplete="off">
+        <button type="button" class="search-clear" id="listingClearBtn" aria-label="Clear search" hidden>✕</button>
+      </div>
+    </div>
+    <div class="prodgrid" id="listingGrid"></div>
+  </section>
+
   <!-- ================= BRAND PRODUCT LISTING ================= -->
   <section class="view" id="view-brand" aria-label="Brand products">
     <button type="button" class="backbtn" data-back="home">← Back</button>
@@ -494,17 +516,12 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     <div class="prodgrid" id="brandProdGrid"></div>
   </section>
 
-  <!-- ================= CATEGORIES PAGE ================= -->
+  <!-- ================= CATEGORIES BROWSER ================= -->
   <section class="view" id="view-categories" aria-label="Categories">
     <div class="section-head">
-      <div><span class="eyebrow">Browse</span><h2>Categories</h2><p>Everything we stock, organised</p></div>
+      <div><span class="eyebrow">Browse</span><h2>Categories</h2><p>Tap a category to open its product list</p></div>
     </div>
     <div class="catgrid" id="catGrid"></div>
-    <div class="section-head" id="catResultHead" hidden>
-      <div><h2 id="catResultTitle"></h2><p id="catResultSub"></p></div>
-      <button type="button" class="linkbtn" id="catClearBtn">← All categories</button>
-    </div>
-    <div class="prodgrid" id="catProdGrid"></div>
   </section>
 
   <!-- ================= POPULAR + DEALS PAGE ================= -->
@@ -580,7 +597,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
       <ul>
         <li><strong>Order enquiries:</strong> when you place an order through the WhatsApp checkout, the message contains only the items in your cart, quantities and totals. You choose what personal details (name, delivery address, phone number) to include.</li>
         <li><strong>Location (optional):</strong> if you allow location access, we compute your approximate distance from our Yadav Chowk store <em>entirely on your device</em> to show "Our store is at ~x km". Coordinates are never stored, transmitted or shared.</li>
-        <li><strong>Cart contents:</strong> your cart is stored <em>only on your own device</em> in your browser's local storage.</li>
+        <li><strong>Cart contents:</strong> your cart is stored <em>only on your own device</em> in your browser's local storage. It never leaves your device except inside the WhatsApp message you approve.</li>
         <li><strong>Product data:</strong> catalogue information (products, categories, deals, brands) is loaded read-only from our Supabase database using a public anon key. No customer accounts exist.</li>
         <li><strong>We do not</strong> require accounts, passwords, Aadhaar, or payment card details on this website.</li>
       </ul>
@@ -745,8 +762,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   };
   var STORE_FALLBACK = [IMG.store1, IMG.store2, IMG.store3];
 
-  /* Curated hero banner art (electrical components) — used first so the hero
-     always looks premium; brands not listed fall back to brands.banner_url. */
   var BRAND_BANNERS = {
     'havells':  'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/1e8375e45-29e3-4681-8b46-8c2f40b64368.png',
     'polycab':  'https://image.qwenlm.ai/public_source/294e9adf-6a98-4513-b3e6-e2fac473622f/11c78f9e0-11fd-43bb-b4d9-f87ea831fa4b.png',
@@ -815,9 +830,12 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   var DEALS      = [];
 
   var CART_KEY = 're_cart_v1';
-  var ROUTES = ['home','categories','popular','store','privacy'];
-  var state = { route:'home', query:'', category:null, cart:[], dataReady:false, loadError:false, brands:[], brandSlug:'' };
-  var searchScrolled = false;
+  var ROUTES = ['home','products','brand','categories','popular','store','privacy'];
+  var state = {
+    route:'home', cart:[], dataReady:false, loadError:false,
+    brands:[], brandSlug:'',
+    listCat:'', listQ:''
+  };
 
   function byId(id){ return document.getElementById(id); }
   function normName(s){ return String(s == null ? '' : s).toLowerCase().trim(); }
@@ -935,7 +953,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     state.brands = list;
   }
 
-  /* ---------- Cart persistence ---------- */
+  /* ================= Cart (existing localStorage implementation) ================= */
   function loadCart(){
     try {
       var raw = window.localStorage.getItem(CART_KEY);
@@ -957,6 +975,16 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   }
   function saveCart(){
     try { window.localStorage.setItem(CART_KEY, JSON.stringify(state.cart)); } catch (e) {}
+  }
+  function qtyInCart(id){
+    for (var i = 0; i < state.cart.length; i++) if (String(state.cart[i].id) === String(id)) return state.cart[i].qty;
+    return 0;
+  }
+  function cartQtyTotal(){ return state.cart.reduce(function(s, it){ return s + it.qty; }, 0); }
+  function cartSum(){
+    return state.cart.reduce(function(s, it){
+      var p = findProduct(it.id); return p ? s + p.price * it.qty : s;
+    }, 0);
   }
 
   /* ---------- Distance ---------- */
@@ -997,7 +1025,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     } catch (e) { setChip('error'); }
   }
 
-  /* ---------- DOM builders ---------- */
+  /* ---------- DOM helpers ---------- */
   function makeImg(src, alt, lazy){
     var im = document.createElement('img');
     var s = (src && String(src).trim()) ? String(src) : FALLBACK_IMG;
@@ -1012,19 +1040,55 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     if (txt != null) d.textContent = txt;
     return d;
   }
-  function categoryCard(cat){
-    var b = document.createElement('button');
-    b.type = 'button'; b.className = 'catcard'; b.setAttribute('data-cat', cat.id);
-    b.setAttribute('aria-label', 'Open category ' + cat.name);
-    b.appendChild(makeImg(cat.img, cat.name + ' category', true));
-    var lab = document.createElement('div'); lab.className = 'cat-label';
-    var st = document.createElement('strong'); st.textContent = cat.name;
-    var sp = document.createElement('span');
-    var count = PRODUCTS.filter(function(p){ return sameCat(p.cat, cat.id); }).length;
-    sp.textContent = count + ' item' + (count === 1 ? '' : 's');
-    lab.appendChild(st); lab.appendChild(sp); b.appendChild(lab);
-    return b;
+  function fillGrid(grid, nodes, emptyMsg){
+    while (grid.firstChild) grid.removeChild(grid.firstChild);
+    if (!nodes.length) {
+      var note = document.createElement('div'); note.className = 'empty-note';
+      note.textContent = emptyMsg || 'No products found. Try searching for a different product or brand.';
+      grid.appendChild(note); return;
+    }
+    nodes.forEach(function(n){ grid.appendChild(n); });
   }
+  function loadingNote(elm){
+    while (elm.firstChild) elm.removeChild(elm.firstChild);
+    var d = document.createElement('div'); d.className = 'empty-note';
+    d.textContent = '⏳ Loading products…';
+    elm.appendChild(d);
+  }
+  function setLoadingState(){
+    ['homeCatGrid','homeProdGrid','catGrid','dealGrid','popularGrid','listingGrid','brandProdGrid'].forEach(function(id){
+      var elm = byId(id); if (elm) loadingNote(elm);
+    });
+  }
+
+  /* ---------- Product card cart controls (Add ↔ [− n +]) ---------- */
+  function fillCtrl(ctrl){
+    var pid = ctrl.getAttribute('data-pid');
+    var q = qtyInCart(pid);
+    if (ctrl.dataset.q === String(q)) return;      /* already in sync */
+    ctrl.dataset.q = String(q);
+    while (ctrl.firstChild) ctrl.removeChild(ctrl.firstChild);
+    var p = findProduct(pid);
+    if (q <= 0) {
+      var btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'addbtn'; btn.setAttribute('data-add', pid);
+      if (p && typeof p.stock === 'number' && p.stock <= 0) { btn.disabled = true; btn.textContent = 'Out of stock'; }
+      else btn.textContent = 'Add to cart';
+      ctrl.appendChild(btn);
+    } else {
+      var wrap = document.createElement('div'); wrap.className = 'qtybox';
+      var minus = document.createElement('button'); minus.type = 'button'; minus.className = 'qbtn'; minus.setAttribute('data-dec', pid); minus.textContent = '−'; minus.setAttribute('aria-label', 'Decrease quantity');
+      var qel = document.createElement('span'); qel.className = 'qval'; qel.textContent = String(q);
+      var plus = document.createElement('button'); plus.type = 'button'; plus.className = 'qbtn'; plus.setAttribute('data-inc', pid); plus.textContent = '+'; plus.setAttribute('aria-label', 'Increase quantity');
+      wrap.appendChild(minus); wrap.appendChild(qel); wrap.appendChild(plus);
+      ctrl.appendChild(wrap);
+    }
+  }
+  function refreshCardControls(){
+    var ctrls = document.querySelectorAll('.pctrl[data-pid]');
+    for (var i = 0; i < ctrls.length; i++) fillCtrl(ctrls[i]);
+  }
+
   function productCard(p){
     var card = document.createElement('article'); card.className = 'pcard';
     var wrap = document.createElement('div'); wrap.className = 'pimg';
@@ -1048,13 +1112,26 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     var now = document.createElement('span'); now.className = 'now'; now.textContent = inr(p.price);
     var was = document.createElement('span'); was.className = 'was'; was.textContent = inr(p.mrp);
     pr.appendChild(now); pr.appendChild(was);
-    var btn = document.createElement('button');
-    btn.type = 'button'; btn.className = 'addbtn'; btn.setAttribute('data-add', p.id);
-    if (typeof p.stock === 'number' && p.stock <= 0) { btn.disabled = true; btn.textContent = 'Out of stock'; }
-    else { btn.textContent = 'Add to cart'; }
-    info.appendChild(br); info.appendChild(nm); info.appendChild(pr); info.appendChild(btn);
+    info.appendChild(br); info.appendChild(nm); info.appendChild(pr);
+    var ctrl = el('div', 'pctrl');
+    ctrl.setAttribute('data-pid', p.id);
+    info.appendChild(ctrl);
+    fillCtrl(ctrl);
     card.appendChild(info);
     return card;
+  }
+  function categoryCard(cat){
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'catcard'; b.setAttribute('data-cat', cat.id);
+    b.setAttribute('aria-label', 'Open ' + cat.name + ' products');
+    b.appendChild(makeImg(cat.img, cat.name + ' category', true));
+    var lab = document.createElement('div'); lab.className = 'cat-label';
+    var st = document.createElement('strong'); st.textContent = cat.name;
+    var sp = document.createElement('span');
+    var count = PRODUCTS.filter(function(p){ return sameCat(p.cat, cat.id); }).length;
+    sp.textContent = count + ' item' + (count === 1 ? '' : 's');
+    lab.appendChild(st); lab.appendChild(sp); b.appendChild(lab);
+    return b;
   }
   function dealCard(d){
     var b = document.createElement('button');
@@ -1068,32 +1145,8 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     ov.appendChild(st); ov.appendChild(sp); b.appendChild(ov);
     return b;
   }
-  function fillGrid(el2, nodes, emptyMsg){
-    while (el2.firstChild) el2.removeChild(el2.firstChild);
-    if (!nodes.length) {
-      var note = document.createElement('div'); note.className = 'empty-note';
-      if (emptyMsg) note.textContent = emptyMsg;
-      else if (state.loadError) note.textContent = '⚠️ Could not load products right now. Please check your internet connection and refresh.';
-      else note.textContent = 'No products found. Try a different search or category.';
-      el2.appendChild(note); return;
-    }
-    nodes.forEach(function(n){ el2.appendChild(n); });
-  }
-  function loadingNote(elm){
-    while (elm.firstChild) elm.removeChild(elm.firstChild);
-    var d = document.createElement('div'); d.className = 'empty-note';
-    d.textContent = '⏳ Loading products…';
-    elm.appendChild(d);
-  }
-  function setLoadingState(){
-    ['homeCatGrid','homeProdGrid','catGrid','dealGrid','popularGrid','brandProdGrid'].forEach(function(id){
-      var elm = byId(id); if (elm) loadingNote(elm);
-    });
-  }
 
-  /* ================= HERO BRAND CAROUSEL ENGINE =================
-     Slide-based: auto next every 3s, dots, swipe/drag, infinite loop
-     via edge clones, pauses while dragging / off-screen / hidden. */
+  /* ---------- HERO carousel engine (unchanged) ---------- */
   var bh = { i:1, n:0, w:0, dragging:false, startX:0, dx:0, moved:0, visible:true, started:false, reduced:false };
   function bhTrack(){ return byId('btrack'); }
   function bhWidth(){ var c = byId('bcarousel'); return c ? c.clientWidth : 0; }
@@ -1102,7 +1155,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     bh.i = i;
     t.style.transition = animate ? 'transform .55s cubic-bezier(.22,.9,.3,1)' : 'none';
     t.style.transform = 'translate3d(' + (-i * bh.w) + 'px,0,0)';
-    if (!animate) void t.offsetWidth;   /* flush so next move animates */
+    if (!animate) void t.offsetWidth;
     bhDots();
   }
   function bhDots(){
@@ -1167,8 +1220,8 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
       if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) bh.reduced = true;
 
       track.addEventListener('transitionend', function () {
-        if (bh.i >= bh.n + 1) bhSet(1, false);        /* jumped past last → real first */
-        else if (bh.i <= 0) bhSet(bh.n, false);       /* before first → real last */
+        if (bh.i >= bh.n + 1) bhSet(1, false);
+        else if (bh.i <= 0) bhSet(bh.n, false);
       });
 
       car.addEventListener('pointerdown', function (e) {
@@ -1200,13 +1253,13 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
       }
       window.addEventListener('resize', function () { bh.w = bhWidth(); bhSet(bh.i, false); });
 
-      setInterval(function () {                       /* auto-swipe every 3 seconds */
+      setInterval(function () {
         if (!bh.dragging && bh.visible && !document.hidden && !bh.reduced && bh.n > 1) bhSet(bh.i + 1, true);
       }, 3000);
     }
   }
 
-  /* ---------- Home popular row ---------- */
+  /* ---------- Renders ---------- */
   function renderHomePopular(){
     var sec = byId('homePopularSection');
     var row = byId('homePopularGrid');
@@ -1215,8 +1268,26 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     sec.hidden = false;
     fillGrid(row, list.map(productCard));
   }
-
-  /* ---------- Brand product listing ---------- */
+  function renderCategories(){
+    if (!state.dataReady) return;
+    fillGrid(byId('homeCatGrid'), CATEGORIES.map(categoryCard));
+    fillGrid(byId('catGrid'), CATEGORIES.map(categoryCard));
+  }
+  function renderDeals(){
+    if (!state.dataReady) return;
+    fillGrid(byId('dealGrid'), DEALS.map(dealCard), 'No active deals right now — check back soon!');
+  }
+  function renderHomeProducts(){
+    if (!state.dataReady) return;
+    var emptyMsg = (!PRODUCTS.length && !state.loadError)
+      ? 'No products in the database yet. Add products from the seller dashboard (admin.html) or check is_active = true in Supabase.'
+      : 'No products found. Try searching for a different product or brand.';
+    fillGrid(byId('homeProdGrid'), PRODUCTS.map(productCard), emptyMsg);
+  }
+  function renderPopular(){
+    if (!state.dataReady) return;
+    fillGrid(byId('popularGrid'), PRODUCTS.filter(function(p){ return p.popular; }).map(productCard), 'No popular products marked yet.');
+  }
   function renderBrandView(){
     var slug = state.brandSlug;
     var brand = null;
@@ -1228,6 +1299,61 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     var list = PRODUCTS.filter(function(p){ return slugify(p.brand) === slug; });
     byId('brandSub').textContent = list.length + ' product' + (list.length === 1 ? '' : 's') + ' available at Rishikesh Enterprises';
     fillGrid(byId('brandProdGrid'), list.map(productCard), 'No active products from this brand right now.');
+  }
+
+  /* ---------- DEDICATED PRODUCT LISTING PAGE ---------- */
+  function filterListing(){
+    var q = state.listQ.trim().toLowerCase();
+    return PRODUCTS.filter(function(p){
+      if (state.listCat && !sameCat(p.cat, state.listCat)) return false;
+      if (!q) return true;
+      return (p.name + ' ' + p.brand + ' ' + (p.description || '')).toLowerCase().indexOf(q) !== -1;
+    });
+  }
+  function renderListing(){
+    if (!state.dataReady) return;
+    var list = filterListing();
+    var q = state.listQ.trim();
+    var title, eyebrow;
+    if (state.listCat) { title = catName(state.listCat); eyebrow = 'Category'; }
+    else if (q) { title = 'Search Results'; eyebrow = 'Catalogue'; }
+    else { title = 'All Products'; eyebrow = 'Catalogue'; }
+    byId('listingTitle').textContent = title;
+    byId('listingEyebrow').textContent = eyebrow;
+    var sub = list.length + ' product' + (list.length === 1 ? '' : 's');
+    if (q) sub += ' matching “' + q + '”';
+    byId('listingSub').textContent = sub;
+
+    var emptyMsg;
+    if (state.listCat && !q && !list.length) emptyMsg = 'No products available in this category yet.';
+    else if (q && !list.length) emptyMsg = 'No products found. Try searching for a different product or brand.';
+    else if (!list.length) emptyMsg = 'No products in the database yet. Add products from the seller dashboard (admin.html) or check is_active = true in Supabase.';
+    fillGrid(byId('listingGrid'), list.map(productCard), emptyMsg);
+    refreshCardControls();
+  }
+  function buildProductsHash(cat, q){
+    var parts = [];
+    if (cat) parts.push('category=' + encodeURIComponent(cat));
+    if (q) parts.push('search=' + encodeURIComponent(q));
+    return '#/products' + (parts.length ? '?' + parts.join('&') : '');
+  }
+  function syncListingInput(){
+    var inp = byId('listingSearchInput');
+    if (inp.value !== state.listQ) inp.value = state.listQ;
+    byId('listingClearBtn').hidden = !inp.value;
+  }
+  function goListing(cat, q){
+    var url = buildProductsHash(cat, q);
+    if (state.route === 'products') {
+      state.listCat = cat; state.listQ = q;
+      try { history.replaceState(null, '', url); } catch (e) {}
+      syncListingInput();
+      renderListing();
+    } else {
+      state.listCat = cat; state.listQ = q;
+      if (window.location.hash === url) { syncListingInput(); renderListing(); }
+      else window.location.hash = url;
+    }
   }
 
   /* ---------- Store photos ---------- */
@@ -1253,62 +1379,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     }
   }
 
-  /* ---------- Renders ---------- */
-  function renderCategories(){
-    if (!state.dataReady) return;
-    fillGrid(byId('homeCatGrid'), CATEGORIES.map(categoryCard));
-    fillGrid(byId('catGrid'), CATEGORIES.map(categoryCard));
-  }
-  function renderDeals(){
-    if (!state.dataReady) return;
-    fillGrid(byId('dealGrid'), DEALS.map(dealCard), 'No active deals right now — check back soon!');
-  }
-  function renderHomeProducts(){
-    if (!state.dataReady) return;
-    var q = state.query.trim().toLowerCase();
-    var list = PRODUCTS.filter(function(p){
-      if (!q) return true;
-      return (p.name + ' ' + p.brand + ' ' + catName(p.cat) + ' ' + (p.description || '')).toLowerCase().indexOf(q) !== -1;
-    });
-    var emptyMsg = null;
-    if (!PRODUCTS.length && !state.loadError) {
-      emptyMsg = 'No products in the database yet. Add products from the seller dashboard (admin.html) or check is_active = true in Supabase.';
-    } else if (q && !list.length) {
-      emptyMsg = 'No products match “' + state.query.trim() + '”. Try another word, e.g. “bulb”, “fan”, “Havells”.';
-    }
-    fillGrid(byId('homeProdGrid'), list.map(productCard), emptyMsg);
-    var status = byId('searchStatus');
-    if (q) status.textContent = list.length + ' result' + (list.length === 1 ? '' : 's') + ' for \u201C' + state.query.trim() + '\u201D';
-    else status.textContent = 'Genuine brands only · fair prices · delivered across Hajipur';
-  }
-  function scrollToResults(){
-    var elm = byId('resultsHead');
-    if (!elm) return;
-    try { elm.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
-    catch (e) { elm.scrollIntoView(); }
-  }
-  function renderPopular(){
-    if (!state.dataReady) return;
-    fillGrid(byId('popularGrid'), PRODUCTS.filter(function(p){ return p.popular; }).map(productCard), 'No popular products marked yet.');
-  }
-  function renderCategoryProducts(){
-    if (!state.dataReady) return;
-    var head = byId('catResultHead');
-    var grid = byId('catProdGrid');
-    if (!state.category) { head.hidden = true; while (grid.firstChild) grid.removeChild(grid.firstChild); return; }
-    head.hidden = false;
-    byId('catResultTitle').textContent = catName(state.category);
-    byId('catResultSub').textContent = 'Everything we stock in this category';
-    fillGrid(grid, PRODUCTS.filter(function(p){ return sameCat(p.cat, state.category); }).map(productCard));
-  }
-
   /* ---------- Cart UI ---------- */
-  function cartQtyTotal(){ return state.cart.reduce(function(s, it){ return s + it.qty; }, 0); }
-  function cartSum(){
-    return state.cart.reduce(function(s, it){
-      var p = findProduct(it.id); return p ? s + p.price * it.qty : s;
-    }, 0);
-  }
   function renderCartBadge(){
     var a = byId('cartCount');
     if (a) a.textContent = cartQtyTotal();
@@ -1349,6 +1420,11 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     byId('cartTotal').textContent = inr(cartSum());
     renderCartBadge();
   }
+  function afterCartChange(){
+    saveCart();
+    renderCart();
+    refreshCardControls();   /* keeps every product card in sync, no reload */
+  }
   function addToCart(id){
     var p = findProduct(id);
     if (!p) return;
@@ -1357,18 +1433,21 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     for (var i = 0; i < state.cart.length; i++) if (String(state.cart[i].id) === String(id)) found = state.cart[i];
     if (found) found.qty = Math.min(99, found.qty + 1);
     else state.cart.push({ id: id, qty: 1 });
-    saveCart(); renderCart();
+    afterCartChange();
     showToast('Added: ' + p.name);
   }
   function changeQty(id, delta){
-    for (var i = 0; i < state.cart.length; i++) {
-      if (String(state.cart[i].id) === String(id)) state.cart[i].qty = Math.min(99, Math.max(1, state.cart[i].qty + delta));
-    }
-    saveCart(); renderCart();
+    var item = null;
+    for (var i = 0; i < state.cart.length; i++) if (String(state.cart[i].id) === String(id)) item = state.cart[i];
+    if (!item) { if (delta > 0) addToCart(id); return; }
+    var next = item.qty + delta;
+    if (next < 1) { removeItem(id); return; }     /* 0 → remove & restore "Add to cart" */
+    item.qty = Math.min(99, next);
+    afterCartChange();
   }
   function removeItem(id){
     state.cart = state.cart.filter(function(it){ return String(it.id) !== String(id); });
-    saveCart(); renderCart();
+    afterCartChange();
   }
 
   var toastTimer = null;
@@ -1391,9 +1470,43 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     byId('overlay').classList.remove('show');
   }
 
-  /* ---------- Router ---------- */
+  /* ---------- Reliable external opener (WhatsApp) ---------- */
+  function openExternal(url){
+    try {
+      var a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function(){ if (a.parentNode) a.parentNode.removeChild(a); }, 500);
+      return true;
+    } catch (e) {
+      console.error('openExternal failed:', e);
+      window.location.href = url;
+      return false;
+    }
+  }
+
+  /* ---------- Routing (existing hash architecture + /products params) ---------- */
+  function parseProductsParams(qs){
+    var cat = '', q = '';
+    (qs || '').split('&').forEach(function (kv) {
+      if (!kv) return;
+      var idx = kv.indexOf('=');
+      var k = idx === -1 ? kv : kv.slice(0, idx);
+      var v = idx === -1 ? '' : kv.slice(idx + 1);
+      v = decodeURIComponent(v.replace(/\+/g, ' '));
+      if (k === 'category') cat = v;
+      else if (k === 'search') q = v;
+    });
+    state.listCat = cat; state.listQ = q;
+  }
   function routeFromHash(){
     var h = window.location.hash.replace(/^#\/?/, '').split('?')[0];
+    var qs = window.location.hash.indexOf('?') !== -1 ? window.location.hash.slice(window.location.hash.indexOf('?') + 1) : '';
+    if (h === 'products') { parseProductsParams(qs); return 'products'; }
     if (h.indexOf('brand/') === 0) {
       state.brandSlug = decodeURIComponent(h.slice(6));
       return 'brand';
@@ -1403,7 +1516,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   function applyRoute(){
     var r = routeFromHash();
     state.route = r;
-    ROUTES.concat(['brand']).forEach(function(v){
+    ROUTES.forEach(function(v){
       var elm = byId('view-' + v);
       if (elm) elm.classList.toggle('active', v === r);
     });
@@ -1411,7 +1524,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     for (var i = 0; i < links.length; i++) {
       links[i].classList.toggle('active', links[i].getAttribute('data-route') === r);
     }
-    if (r === 'categories') renderCategoryProducts();
+    if (r === 'products') { syncListingInput(); renderListing(); }
     if (r === 'brand') renderBrandView();
     try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
   }
@@ -1427,9 +1540,6 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
       try { inp.select(); } catch (e) {}
     }, 120);
   }
-  function syncClearBtn(){
-    byId('searchClearBtn').hidden = !byId('searchInput').value;
-  }
 
   /* ---------- Events ---------- */
   document.addEventListener('click', function (ev) {
@@ -1441,7 +1551,7 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
 
     var brandBtn = target.closest('[data-brand]');
     if (brandBtn) {
-      if (bh.moved > 8) { bh.moved = 0; return; }        /* ignore tap after swipe */
+      if (bh.moved > 8) { bh.moved = 0; return; }
       window.location.hash = '#/brand/' + brandBtn.getAttribute('data-brand');
       return;
     }
@@ -1456,21 +1566,9 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     var rmBtn = target.closest('[data-rm]');
     if (rmBtn) { removeItem(rmBtn.getAttribute('data-rm')); return; }
     var catBtn = target.closest('[data-cat]');
-    if (catBtn) {
-      state.category = catBtn.getAttribute('data-cat');
-      if (state.route !== 'categories') window.location.hash = '#/categories';
-      renderCategoryProducts();
-      var head = byId('catResultHead');
-      if (head && !head.hidden) { try { head.scrollIntoView({ behavior:'smooth', block:'start' }); } catch (e) {} }
-      return;
-    }
+    if (catBtn) { goListing(catBtn.getAttribute('data-cat'), ''); return; }   /* category → listing page */
     var dealBtn = target.closest('[data-deal]');
-    if (dealBtn) {
-      state.category = dealBtn.getAttribute('data-deal');
-      window.location.hash = '#/categories';
-      renderCategoryProducts();
-      return;
-    }
+    if (dealBtn) { goListing(dealBtn.getAttribute('data-deal'), ''); return; }
     var gotoBtn = target.closest('[data-goto]');
     if (gotoBtn) { window.location.hash = '#/' + gotoBtn.getAttribute('data-goto'); return; }
   });
@@ -1484,40 +1582,78 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
   byId('overlay').addEventListener('click', closeCart);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeCart(); });
   byId('clearCartBtn').addEventListener('click', function () {
-    state.cart = []; saveCart(); renderCart(); showToast('Cart cleared');
+    state.cart = [];
+    afterCartChange();
+    showToast('Cart cleared');
   });
 
+  /* Listing back button */
+  byId('listingBack').addEventListener('click', function () {
+    if (window.history.length > 1) window.history.back();
+    else window.location.hash = '#/';
+  });
+
+  /* Listing search: client-side only, URL kept in sync (replaceState) */
+  byId('listingSearchIco').addEventListener('click', function () {
+    byId('listingSearchInput').focus({ preventScroll: true });
+  });
+  byId('listingSearchInput').addEventListener('input', function (e) {
+    state.listQ = String(e.target.value || '').slice(0, 60);
+    byId('listingClearBtn').hidden = !state.listQ;
+    try { history.replaceState(null, '', buildProductsHash(state.listCat, state.listQ)); } catch (err) {}
+    renderListing();
+  });
+  byId('listingSearchInput').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') e.preventDefault();
+  });
+  byId('listingClearBtn').addEventListener('click', function () {
+    state.listQ = '';
+    syncListingInput();
+    try { history.replaceState(null, '', buildProductsHash(state.listCat, '')); } catch (err) {}
+    renderListing();
+    byId('listingSearchInput').focus({ preventScroll: true });
+  });
+
+  /* Homepage search → navigates to the listing page (debounced) */
+  var homeSearchTimer = null;
   byId('searchFocusBtn').addEventListener('click', focusSearch);
   byId('tabSearch').addEventListener('click', focusSearch);
   byId('searchClearBtn').addEventListener('click', function () {
     var inp = byId('searchInput');
-    inp.value = ''; state.query = ''; searchScrolled = false;
-    syncClearBtn();
-    renderHomeProducts();
-    inp.focus({ preventScroll: true });
+    inp.value = '';
+    byId('searchClearBtn').hidden = true;
+    if (homeSearchTimer) clearTimeout(homeSearchTimer);
   });
   byId('searchInput').addEventListener('input', function (e) {
-    state.query = String(e.target.value || '').slice(0, 60);
-    syncClearBtn();
-    if (state.route !== 'home') window.location.hash = '#/';
-    renderHomeProducts();
-    if (state.query.trim() && !searchScrolled) {
-      searchScrolled = true;
-      setTimeout(scrollToResults, 80);
-    }
-    if (!state.query.trim()) searchScrolled = false;
+    var v = String(e.target.value || '').slice(0, 60);
+    byId('searchClearBtn').hidden = !v;
+    if (homeSearchTimer) clearTimeout(homeSearchTimer);
+    if (!v.trim()) return;
+    homeSearchTimer = setTimeout(function () { goListing('', v.trim()); }, 450);
   });
   byId('searchInput').addEventListener('keydown', function (e) {
     if (e.key === 'Enter') {
       e.preventDefault();
-      renderHomeProducts();
-      scrollToResults();
+      if (homeSearchTimer) clearTimeout(homeSearchTimer);
+      var v = e.target.value.trim();
+      if (v) goListing('', v);
     }
   });
 
-  byId('catClearBtn').addEventListener('click', function () {
-    state.category = null; renderCategoryProducts();
+  /* WhatsApp checkout — message format per specification */
+  byId('checkoutBtn').addEventListener('click', function () {
+    if (!state.cart.length) { showToast('Your cart is empty — add products first.'); return; }
+    var lines = ['Hello Rishikesh Enterprises,', 'I would like to order:', ''];
+    state.cart.forEach(function (it) {
+      var p = findProduct(it.id); if (!p) return;
+      lines.push(p.name + ' × ' + it.qty + ' — ' + inr(p.price * it.qty));
+    });
+    lines.push('', 'Total: ' + inr(cartSum()), '', 'Please confirm availability and delivery details.');
+    var url = WA_LINK + '?text=' + encodeURIComponent(lines.join('\n'));
+    showToast('Opening WhatsApp…');
+    openExternal(url);
   });
+
   window.addEventListener('hashchange', applyRoute);
 
   /* ---------- Init ---------- */
@@ -1538,9 +1674,10 @@ footer{background:#17090a;color:#d6c9c9;margin-top:40px}
     renderDeals();
     renderHomeProducts();
     renderPopular();
-    renderCategoryProducts();
+    renderBrandView();
+    renderListing();
     renderCart();
-    syncClearBtn();
+    refreshCardControls();
     applyRoute();
     hideSplash();
     var auto = function(){ setTimeout(requestDistance, 700); };
